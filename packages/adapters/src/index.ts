@@ -36,3 +36,10 @@ export {
 	type IntervalWatchdogDeps,
 	type WatchdogReport,
 } from "./watchdog/IntervalWatchdog";
+export {
+	GitWorktreeToolsets,
+	type GitWorktreeToolsetsConfig,
+	type PullRequestOpener,
+} from "./workspace/GitWorktreeToolsets";
+export { PathError, resolveInside } from "./workspace/paths";
+export { type ProcessResult, runProcess } from "./workspace/process";
