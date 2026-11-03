@@ -37,11 +37,7 @@ describe("IntakeTriggerUseCase", () => {
 		const intake = new IntakeTriggerUseCase({ store });
 		const event = makeEvent();
 		const first = await intake.execute(event);
-		await store.compareAndSetTriggerStatus(
-			first.trigger.id,
-			TriggerStatus.PENDING,
-			TriggerStatus.ACCEPTED,
-		);
+		store.setStatus(first.trigger.id, TriggerStatus.ACCEPTED);
 
 		const second = await intake.execute(event);
 

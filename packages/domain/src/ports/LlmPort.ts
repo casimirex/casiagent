@@ -1,15 +1,16 @@
 import type { WorkerContext } from "../entities/Session";
-import type { Trigger } from "../entities/Trigger";
 import type { WorkItem, WorkResult } from "../entities/WorkItem";
+import type { TriggerPriority } from "../value-objects/TriggerPriority";
 
-export type TriggerPriority = "low" | "normal" | "high";
-
+/**
+ * A fully rendered evaluation prompt. The application owns and versions the template
+ * (it contains the payload, authorization rules and queue depth); the adapter only
+ * sends it and parses the model's answer into a TriggerVerdict.
+ */
 export interface TriggerEvaluationRequest {
-	readonly trigger: Trigger;
-	/** The team's written authorization rules, in natural language. */
-	readonly authorizationRules: string;
-	/** Number of WorkItems not yet finished, so the model can avoid piling on work. */
-	readonly queueDepth: number;
+	readonly triggerId: string;
+	readonly promptVersion: string;
+	readonly prompt: string;
 }
 
 export interface TriggerVerdict {

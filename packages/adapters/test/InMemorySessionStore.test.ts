@@ -106,27 +106,44 @@ describe("InMemorySessionStore behaviour", () => {
 		expect(ids).toEqual(["early", "late"]);
 	});
 
-	test("compareAndSetTriggerStatus: exactly one of many concurrent claims wins", async () => {
+	test("compareAndSetTrigger: exactly one of many concurrent claims wins", async () => {
 		const store = new InMemorySessionStore();
 		await store.createTrigger(trigger("t", 1));
+		const consumed = trigger("t", 1, TriggerStatus.CONSUMED);
 		const claims = await Promise.all(
 			Array.from({ length: 10 }, () =>
-				store.compareAndSetTriggerStatus("t", TriggerStatus.ACCEPTED, TriggerStatus.CONSUMED),
+				store.compareAndSetTrigger(TriggerStatus.ACCEPTED, consumed),
 			),
 		);
 		expect(claims.filter((c) => c !== undefined)).toHaveLength(1);
 		expect((await store.loadTrigger("t"))?.status).toBe(TriggerStatus.CONSUMED);
 	});
 
-	test("compareAndSetTriggerStatus returns undefined for unknown ids", async () => {
+	test("compareAndSetTrigger returns undefined for unknown ids", async () => {
 		const store = new InMemorySessionStore();
 		expect(
-			await store.compareAndSetTriggerStatus(
-				"nope",
-				TriggerStatus.ACCEPTED,
-				TriggerStatus.CONSUMED,
-			),
+			await store.compareAndSetTrigger(TriggerStatus.ACCEPTED, trigger("nope", 1)),
 		).toBeUndefined();
+	});
+
+	test("compareAndSetTrigger stores the full replacement, including the decision", async () => {
+		const store = new InMemorySessionStore();
+		await store.createTrigger(trigger("t", 1, TriggerStatus.PENDING));
+		const next: Trigger = {
+			...trigger("t", 1, TriggerStatus.REJECTED),
+			decision: { stage: "FAST_FILTER", reason: "bot", priority: "normal" },
+		};
+		await store.compareAndSetTrigger(TriggerStatus.PENDING, next);
+		expect(await store.loadTrigger("t")).toEqual(next);
+	});
+
+	test("countWorkItemsByStatus counts only the given statuses", async () => {
+		const store = new InMemorySessionStore();
+		await store.saveWorkItem({ id: "a", triggerId: "t", status: "PENDING" });
+		await store.saveWorkItem({ id: "b", triggerId: "t", status: "RUNNING" });
+		await store.saveWorkItem({ id: "c", triggerId: "t", status: "COMPLETED" });
+		expect(await store.countWorkItemsByStatus(["PENDING", "RUNNING"])).toBe(2);
+		expect(await store.countWorkItemsByStatus([])).toBe(0);
 	});
 
 	test("work items round-trip", async () => {

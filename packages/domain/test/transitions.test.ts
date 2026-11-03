@@ -33,7 +33,7 @@ describe("Trigger transitions", () => {
 			TriggerStatus.EVALUATING,
 			TriggerStatus.ACCEPTED,
 			TriggerStatus.CONSUMED,
-		].reduce(transitionTrigger, trigger);
+		].reduce((t, status) => transitionTrigger(t, status), trigger);
 		expect(consumed.status).toBe(TriggerStatus.CONSUMED);
 	});
 

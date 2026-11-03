@@ -6,7 +6,7 @@ This roadmap describes how to build a SuperAgent-like system from scratch using 
 
 ## Working Notes (keep current)
 
-**Progress**: Phase 0 — done. Phase 1 — done. Next: Phase 2.
+**Progress**: Phases 0–2 — done. Next: Phase 3.
 
 **Commands**: `bun run check` = type-check + lint + architecture check + tests. Must pass before a phase is considered done.
 
@@ -14,18 +14,22 @@ This roadmap describes how to build a SuperAgent-like system from scratch using 
 - The repo root is the workspace root (no nested `superagent/` folder).
 - Named exports only. `interface` for object shapes. Status "enums" are `as const` objects + a derived union type (no TS `enum`).
 - `packages/domain` compiles with `types: []`, so Bun/Node globals are a type error there, not just a lint issue. `bun run arch` enforces the Dependency Rule on imports, type-only imports included (rules in `scripts/architecture.ts`).
-- Tests live in `packages/*/test/` and `apps/*/test/` and use `bun:test`.
+- Tests live in `packages/*/test/` and `apps/*/test/` and use `bun:test`. The roadmap's per-phase verify paths (e.g. `bun test packages/domain/src/services`) therefore map to `bun test packages/<pkg>`.
 - IDs and timestamps are generated outside the domain (an `IdGenerator`/`Clock` port or the caller supplies them); domain code is deterministic.
 
 **Gaps in the roadmap below, and how we resolve them** (ports grow in the phase that first needs them; record each extension here):
 - _Status values_: Trigger uses `PENDING | EVALUATING | ACCEPTED | REJECTED | CONSUMED`, plus `OBSERVED` added in Phase 5. WorkItem uses `PENDING | RUNNING | COMPLETED | FAILED | ABANDONED` (Phase 3 refers to COMPLETED/ABANDONED). Session uses `ACTIVE | STALLED | COMPLETED | FAILED` (Phase 4 refers to STALLED).
-- _Phase 1 (done)_: `SessionStorePort` gained `createTrigger` (insert-only), `loadTrigger`, `listTriggersByStatus`, `compareAndSetTriggerStatus` (atomic; every Trigger status change goes through it) and `saveWorkItem/loadWorkItem`. Any persistent adapter must keep `createTrigger` insert-only and the CAS atomic.
+- _Phase 1 (done)_: `SessionStorePort` gained `createTrigger` (insert-only), `loadTrigger`, `listTriggersByStatus`, `compareAndSetTrigger(expectedStatus, next)` (atomic replace-if-status-matches; every Trigger update goes through it — renamed and widened in Phase 2 so decisions are stored atomically with the status) and `saveWorkItem/loadWorkItem`. Any persistent adapter must keep `createTrigger` insert-only and the CAS atomic.
 - _Phase 1 (done)_: "Spawning" a Worker = persisting an ACTIVE session. `DispatchWorkUseCase` returns `DispatchRecord`s and the caller runs `WorkerExecutionUseCase` for each. No spawner port.
 - _Phase 1 (done)_: `SourcePort.reply(OutboundMessage)` added. `Trigger` gained `threadId?`, `authorId`, `authorIsBot` (copied from `SourceEvent`; Phase 2/3 need them). Trigger ids are `${sourceId}#${eventId}`, so intake is idempotent.
 - _Phase 1 (done)_: Domain ports `IdGeneratorPort` and `ClockPort` added; adapters `UuidGenerator`, `SystemClock`, `InMemorySessionStore`.
 - _Phase 1 (done)_: The Worker persists its result before replying; a failed reply is reported as `delivery: { delivered: false }`, never re-runs the task. A RUNNING WorkItem is resumed rather than rejected (for the Phase 4 Watchdog).
 - _Phase 4 must handle_: a crash between Dispatch claiming a Trigger (→ CONSUMED) and saving its session leaves a CONSUMED Trigger with no WorkItem. Recovery should reconcile these.
-- _Phase 2_: The LLM prompt needs the work-queue depth, so the store needs a count query.
+- _Phase 2 (done)_: Queue depth = ACCEPTED Triggers + PENDING/RUNNING WorkItems (`countWorkItemsByStatus` added to the store).
+- _Phase 2 (done)_: `FilterRules` allow-lists are an explicit list or `"any"`; an empty list allows nothing. Config is compiled once by `createFilterRules` (bad regex fails at startup; patterns are case-insensitive, never `g`/`y`). Keywords match string values in the payload, up to 5 levels deep.
+- _Phase 2 (done)_: The application renders the prompt (`application/src/prompts/evaluateTrigger.ts`, versioned), so `LlmPort.evaluateTrigger` takes `{ triggerId, promptVersion, prompt }`. The adapter's job is transport + parsing the JSON verdict; the use case still validates the verdict before acting. The payload is fenced as untrusted data and substitution is single-pass.
+- _Phase 2 (done)_: An LLM error or invalid verdict sends the Trigger EVALUATING → PENDING (new transition) for retry. There is no retry limit yet; add one with Phase 4's escalation if needed.
+- _Phase 2 (done)_: `Trigger.decision` records `{ stage, reason, priority }`. Dispatch orders ACCEPTED Triggers high → normal → low, then oldest first. `TriggerPriority` moved to `value-objects/`.
 - _Phase 4_: The Watchdog needs `lastHeartbeatAt` and `restartCount` on `Session`; both were added in Phase 0. "Kill the session process" means simulating a stalled session, since Workers are not OS processes. The "panel store" used for escalation comes before `PanelPort` (Phase 5), so add a minimal `AttentionSinkPort` in Phase 4.
 - _Not covered by any phase_: real `LlmPort` (Claude API) and `SourcePort` (e.g. GitHub) adapters. Add them as a Phase 6 once Phase 5 is done.
 - The two reference projects named below have not been checked; treat them as unconfirmed.

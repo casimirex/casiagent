@@ -6,6 +6,7 @@ import {
 	type Trigger,
 	type TriggerStatus,
 	type WorkItem,
+	type WorkItemStatus,
 } from "@superagent/domain";
 
 const ACTIVE_STATUSES: ReadonlySet<SessionStatus> = new Set([
@@ -18,7 +19,7 @@ const ACTIVE_STATUSES: ReadonlySet<SessionStatus> = new Set([
  * callers (and no two Workers) ever share a mutable object. Replaced by SQLite in Phase 4.
  *
  * Each method's read-check-write runs without an intervening await, so
- * compareAndSetTriggerStatus is atomic within one process.
+ * compareAndSetTrigger is atomic within one process.
  */
 export class InMemorySessionStore implements SessionStorePort {
 	readonly #sessions = new Map<string, Session>();
@@ -56,16 +57,14 @@ export class InMemorySessionStore implements SessionStorePort {
 			.map((t) => structuredClone(t));
 	}
 
-	async compareAndSetTriggerStatus(
-		id: string,
-		expected: TriggerStatus,
-		next: TriggerStatus,
+	async compareAndSetTrigger(
+		expectedStatus: TriggerStatus,
+		next: Trigger,
 	): Promise<Trigger | undefined> {
-		const current = this.#triggers.get(id);
-		if (current === undefined || current.status !== expected) return undefined;
-		const updated: Trigger = { ...current, status: next };
-		this.#triggers.set(id, updated);
-		return structuredClone(updated);
+		const current = this.#triggers.get(next.id);
+		if (current === undefined || current.status !== expectedStatus) return undefined;
+		this.#triggers.set(next.id, structuredClone(next));
+		return structuredClone(next);
 	}
 
 	async saveWorkItem(item: WorkItem): Promise<void> {
@@ -74,6 +73,12 @@ export class InMemorySessionStore implements SessionStorePort {
 
 	async loadWorkItem(id: string): Promise<WorkItem | undefined> {
 		return cloneOrUndefined(this.#workItems.get(id));
+	}
+
+	async countWorkItemsByStatus(statuses: readonly WorkItemStatus[]): Promise<number> {
+		let count = 0;
+		for (const item of this.#workItems.values()) if (statuses.includes(item.status)) count += 1;
+		return count;
 	}
 }
 

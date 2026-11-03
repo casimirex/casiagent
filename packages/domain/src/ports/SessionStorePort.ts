@@ -2,7 +2,7 @@ import type { Session } from "../entities/Session";
 import type { Trigger } from "../entities/Trigger";
 import type { WorkItem } from "../entities/WorkItem";
 import type { SessionId } from "../value-objects/SessionId";
-import type { TriggerStatus } from "../value-objects/TaskStatus";
+import type { TriggerStatus, WorkItemStatus } from "../value-objects/TaskStatus";
 
 /**
  * Persistence for Triggers, WorkItems and Worker sessions.
@@ -23,17 +23,15 @@ export interface SessionStorePort {
 	/** Oldest first, by timestamp. */
 	listTriggersByStatus(status: TriggerStatus): Promise<readonly Trigger[]>;
 	/**
-	 * Atomically move a Trigger from `expected` to `next`. Returns the updated Trigger,
-	 * or undefined if it does not exist or its status is no longer `expected`.
-	 * This is how concurrent callers claim a Trigger without double-processing it.
+	 * Atomically replace the stored Trigger with `next` (matched by id), but only if the
+	 * stored status is still `expectedStatus`. Returns the stored Trigger, or undefined if
+	 * it does not exist or its status has changed. Every Trigger update goes through this,
+	 * which is how concurrent callers claim a Trigger without double-processing it.
 	 */
-	compareAndSetTriggerStatus(
-		id: string,
-		expected: TriggerStatus,
-		next: TriggerStatus,
-	): Promise<Trigger | undefined>;
+	compareAndSetTrigger(expectedStatus: TriggerStatus, next: Trigger): Promise<Trigger | undefined>;
 
 	/** Insert or replace a WorkItem. */
 	saveWorkItem(item: WorkItem): Promise<void>;
 	loadWorkItem(id: string): Promise<WorkItem | undefined>;
+	countWorkItemsByStatus(statuses: readonly WorkItemStatus[]): Promise<number>;
 }

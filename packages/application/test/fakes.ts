@@ -12,9 +12,11 @@ import {
 	type SourcePort,
 	type TaskExecutionRequest,
 	type Trigger,
+	type TriggerEvaluationRequest,
 	type TriggerStatus,
 	type TriggerVerdict,
 	type WorkItem,
+	type WorkItemStatus,
 	type WorkResult,
 } from "@superagent/domain";
 
@@ -60,13 +62,18 @@ export class FakeSessionStore implements SessionStorePort {
 			.sort((a, b) => a.timestamp - b.timestamp)
 			.map((t) => structuredClone(t));
 	}
-	async compareAndSetTriggerStatus(id: string, expected: TriggerStatus, next: TriggerStatus) {
+	async compareAndSetTrigger(expectedStatus: TriggerStatus, next: Trigger) {
 		await tick();
+		const t = this.triggers.get(next.id);
+		if (t === undefined || t.status !== expectedStatus) return undefined;
+		this.triggers.set(next.id, structuredClone(next));
+		return structuredClone(next);
+	}
+	/** Test helper: force a stored trigger's status, bypassing transition rules. */
+	setStatus(id: string, status: TriggerStatus) {
 		const t = this.triggers.get(id);
-		if (t === undefined || t.status !== expected) return undefined;
-		const updated = { ...t, status: next };
-		this.triggers.set(id, updated);
-		return structuredClone(updated);
+		if (t === undefined) throw new Error(`no trigger ${id}`);
+		this.triggers.set(id, { ...t, status });
 	}
 	async saveWorkItem(item: WorkItem) {
 		await tick();
@@ -76,6 +83,10 @@ export class FakeSessionStore implements SessionStorePort {
 		await tick();
 		const w = this.workItems.get(id);
 		return w && structuredClone(w);
+	}
+	async countWorkItemsByStatus(statuses: readonly WorkItemStatus[]) {
+		await tick();
+		return [...this.workItems.values()].filter((w) => statuses.includes(w.status)).length;
 	}
 }
 
@@ -96,12 +107,20 @@ export class FixedClock implements ClockPort {
 
 export class FakeLlm implements LlmPort {
 	readonly executeCalls: TaskExecutionRequest[] = [];
+	readonly evaluateCalls: TriggerEvaluationRequest[] = [];
+	/** Replace to change the verdict (or throw). */
+	evaluate: (req: TriggerEvaluationRequest) => Promise<TriggerVerdict> = async () => ({
+		accepted: true,
+		reason: "looks like a legitimate request",
+		priority: "normal",
+	});
 	/** Replace to change how tasks run (e.g. to throw). */
 	execute: (req: TaskExecutionRequest) => Promise<WorkResult> = async (req) => ({
 		output: `done: ${req.workItem.id}`,
 	});
-	async evaluateTrigger(): Promise<TriggerVerdict> {
-		throw new Error("not used in Phase 1");
+	async evaluateTrigger(req: TriggerEvaluationRequest) {
+		this.evaluateCalls.push(req);
+		return this.evaluate(req);
 	}
 	async executeTask(req: TaskExecutionRequest) {
 		this.executeCalls.push(req);

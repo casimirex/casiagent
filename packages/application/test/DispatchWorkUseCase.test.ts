@@ -10,11 +10,7 @@ async function acceptedTriggers(store: FakeSessionStore, bodies: readonly string
 		const { trigger } = await intake.execute(
 			makeEvent({ id: `evt-${i}`, threadId: `thread-${i}`, payload: { body }, timestamp: i }),
 		);
-		await store.compareAndSetTriggerStatus(
-			trigger.id,
-			TriggerStatus.PENDING,
-			TriggerStatus.ACCEPTED,
-		);
+		store.setStatus(trigger.id, TriggerStatus.ACCEPTED);
 		ids.push(trigger.id);
 	}
 	return ids;

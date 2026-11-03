@@ -33,11 +33,7 @@ async function setup(bodies: readonly string[] = ["fix the flaky test"]) {
 		const { trigger } = await intake.execute(
 			makeEvent({ id: `evt-${i}`, threadId: `pr-${i}`, payload: { body }, timestamp: i }),
 		);
-		await store.compareAndSetTriggerStatus(
-			trigger.id,
-			TriggerStatus.PENDING,
-			TriggerStatus.ACCEPTED,
-		);
+		store.setStatus(trigger.id, TriggerStatus.ACCEPTED);
 	}
 	const { dispatched } = await new DispatchWorkUseCase({
 		store,

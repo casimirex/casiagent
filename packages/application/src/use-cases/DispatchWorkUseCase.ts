@@ -1,5 +1,6 @@
 import {
 	type ClockPort,
+	comparePriority,
 	type DispatchRecord,
 	type IdGeneratorPort,
 	type RouterState,
@@ -28,7 +29,7 @@ export interface DispatchOutcome {
 }
 
 /**
- * Turns every ACCEPTED Trigger into a WorkItem with its own Worker and session.
+ * Turns every ACCEPTED Trigger (highest priority first) into a WorkItem with its own Worker and session.
  *
  * "Spawning" a Worker means persisting an ACTIVE session with an isolated context;
  * the caller decides how to run it. Each Trigger is claimed atomically
@@ -50,17 +51,18 @@ export class DispatchWorkUseCase {
 	}
 
 	async execute(state: RouterState): Promise<DispatchOutcome> {
-		const accepted = await this.#store.listTriggersByStatus(TriggerStatus.ACCEPTED);
+		// High priority first; the store already returns oldest first, and sort is stable.
+		const accepted = [...(await this.#store.listTriggersByStatus(TriggerStatus.ACCEPTED))].sort(
+			(a, b) => comparePriority(a.decision?.priority ?? "normal", b.decision?.priority ?? "normal"),
+		);
 		const dispatched: DispatchRecord[] = [];
 
 		for (const candidate of accepted) {
 			if (state.isDispatched(candidate.id)) continue;
 
-			const target = transitionTrigger(candidate, TriggerStatus.CONSUMED).status;
-			const trigger = await this.#store.compareAndSetTriggerStatus(
-				candidate.id,
+			const trigger = await this.#store.compareAndSetTrigger(
 				TriggerStatus.ACCEPTED,
-				target,
+				transitionTrigger(candidate, TriggerStatus.CONSUMED),
 			);
 			if (trigger === undefined) continue; // another dispatcher claimed it first
 

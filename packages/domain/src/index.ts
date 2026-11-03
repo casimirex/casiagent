@@ -9,6 +9,7 @@ export {
 export {
 	TRIGGER_TRANSITIONS,
 	type Trigger,
+	type TriggerDecision,
 	type TriggerPayload,
 	transitionTrigger,
 } from "./entities/Trigger";
@@ -26,7 +27,6 @@ export type {
 	LlmPort,
 	TaskExecutionRequest,
 	TriggerEvaluationRequest,
-	TriggerPriority,
 	TriggerVerdict,
 } from "./ports/LlmPort";
 export type { SessionStorePort } from "./ports/SessionStorePort";
@@ -38,7 +38,22 @@ export type {
 	Unsubscribe,
 } from "./ports/SourcePort";
 export type { WatchdogPort } from "./ports/WatchdogPort";
+export {
+	type AllowList,
+	createFilterRules,
+	FilterDecision,
+	type FilterResult,
+	type FilterRules,
+	type FilterRulesConfig,
+	fastFilter,
+	payloadText,
+} from "./services/fastFilter";
 export { type DispatchRecord, RouterState } from "./value-objects/RouterState";
 export { SessionId } from "./value-objects/SessionId";
 export { SourceId } from "./value-objects/SourceId";
 export { SessionStatus, TriggerStatus, WorkItemStatus } from "./value-objects/TaskStatus";
+export {
+	comparePriority,
+	isTriggerPriority,
+	TriggerPriority,
+} from "./value-objects/TriggerPriority";
