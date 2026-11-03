@@ -9,7 +9,7 @@ import {
 	TriggerStatus,
 	type WorkItem,
 	type WorkItemStatus,
-} from "@superagent/domain";
+} from "@casiagent/domain";
 
 interface SessionRow {
 	id: string;

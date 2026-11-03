@@ -1,4 +1,4 @@
-import type { Subscription, SubscriptionStorePort, ThreadKey } from "@superagent/domain";
+import type { Subscription, SubscriptionStorePort, ThreadKey } from "@casiagent/domain";
 
 /** Process-local subscription store. Values are copied in and out. */
 export class InMemorySubscriptionStore implements SubscriptionStorePort {

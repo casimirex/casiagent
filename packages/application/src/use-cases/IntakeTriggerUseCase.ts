@@ -3,7 +3,7 @@ import {
 	type SourceEvent,
 	type Trigger,
 	TriggerStatus,
-} from "@superagent/domain";
+} from "@casiagent/domain";
 import { UseCaseError } from "../errors";
 
 export interface IntakeTriggerDeps {

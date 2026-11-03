@@ -5,7 +5,7 @@ import {
 	SubscriptionRegistry,
 	SubscriptionRouter,
 	WorkerExecutionUseCase,
-} from "@superagent/application";
+} from "@casiagent/application";
 import {
 	type DispatchRecord,
 	RouterState,
@@ -19,7 +19,7 @@ import {
 	TriggerStatus,
 	WorkItemStatus,
 	type WorkResult,
-} from "@superagent/domain";
+} from "@casiagent/domain";
 import {
 	FakeAuthorization,
 	FakeLlm,
@@ -96,7 +96,7 @@ async function setup() {
 		clock: new FixedClock(),
 		registry,
 		intake,
-		selfAuthorIds: new Set(["superagent-bot"]),
+		selfAuthorIds: new Set(["casiagent-bot"]),
 	});
 	const worker = new WorkerExecutionUseCase({
 		panel: new FakePanel(),
@@ -309,7 +309,7 @@ describe("Direct routing of follow-ups", () => {
 		const own = makeEvent({
 			id: "bot-1",
 			threadId: "pr-99",
-			authorId: "superagent-bot",
+			authorId: "casiagent-bot",
 			authorIsBot: true,
 		});
 		expect(await send(router, worker, own)).toMatchObject({ type: "IGNORED" });

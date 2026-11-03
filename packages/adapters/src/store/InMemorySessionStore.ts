@@ -8,7 +8,7 @@ import {
 	TriggerStatus,
 	type WorkItem,
 	type WorkItemStatus,
-} from "@superagent/domain";
+} from "@casiagent/domain";
 
 const ACTIVE_STATUSES: ReadonlySet<SessionStatus> = new Set([
 	SessionStatus.ACTIVE,

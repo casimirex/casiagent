@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { type SubscriptionStorePort, ThreadKey } from "@superagent/domain";
+import { type SubscriptionStorePort, ThreadKey } from "@casiagent/domain";
 import { REPO, subscription } from "./fixtures";
 
 export function subscriptionStoreContract(name: string, make: () => SubscriptionStorePort): void {

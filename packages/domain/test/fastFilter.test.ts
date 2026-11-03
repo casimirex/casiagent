@@ -9,7 +9,7 @@ import {
 	SourceId,
 	type Trigger,
 	TriggerStatus,
-} from "@superagent/domain";
+} from "@casiagent/domain";
 
 const REPO = SourceId.of("github:org/repo");
 const OTHER = SourceId.of("github:org/other");

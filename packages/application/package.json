@@ -1,5 +1,5 @@
 {
-	"name": "@superagent/application",
+	"name": "@casiagent/application",
 	"version": "0.0.0",
 	"private": true,
 	"type": "module",
@@ -7,6 +7,6 @@
 		".": "./src/index.ts"
 	},
 	"dependencies": {
-		"@superagent/domain": "workspace:*"
+		"@casiagent/domain": "workspace:*"
 	}
 }

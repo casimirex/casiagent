@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { IntakeTriggerUseCase, triggerIdFor } from "@superagent/application";
-import { TriggerStatus } from "@superagent/domain";
+import { IntakeTriggerUseCase, triggerIdFor } from "@casiagent/application";
+import { TriggerStatus } from "@casiagent/domain";
 import { FakeSessionStore, makeEvent } from "./fakes";
 
 describe("IntakeTriggerUseCase", () => {

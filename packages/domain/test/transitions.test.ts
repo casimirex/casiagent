@@ -13,7 +13,7 @@ import {
 	transitionWorkItem,
 	type WorkItem,
 	WorkItemStatus,
-} from "@superagent/domain";
+} from "@casiagent/domain";
 
 const trigger: Trigger = {
 	id: "t1",

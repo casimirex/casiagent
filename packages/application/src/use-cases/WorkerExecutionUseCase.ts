@@ -18,7 +18,7 @@ import {
 	type WorkItem,
 	WorkItemStatus,
 	type WorkResult,
-} from "@superagent/domain";
+} from "@casiagent/domain";
 import { UseCaseError } from "../errors";
 import type { PanelPort } from "../ports/PanelPort";
 import { eventMessage, resultMessage } from "../services/buildWorkerContext";

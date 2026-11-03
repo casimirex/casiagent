@@ -1,4 +1,4 @@
-import type { SpilledMessage } from "@superagent/domain";
+import type { SpilledMessage } from "@casiagent/domain";
 
 const STOPWORDS = new Set(
 	"the and for are but not you all any can had her was one our out has have this that with from they will would there their what about which when make like just into than them then its also please".split(

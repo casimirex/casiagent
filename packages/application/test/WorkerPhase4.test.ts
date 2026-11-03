@@ -5,7 +5,7 @@ import {
 	IntakeTriggerUseCase,
 	SubscriptionRegistry,
 	WorkerExecutionUseCase,
-} from "@superagent/application";
+} from "@casiagent/application";
 import {
 	type DispatchRecord,
 	RouterState,
@@ -15,7 +15,7 @@ import {
 	type SourcePort,
 	TriggerStatus,
 	type WatchdogPort,
-} from "@superagent/domain";
+} from "@casiagent/domain";
 import {
 	FakeLlm,
 	FakePanel,

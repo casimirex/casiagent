@@ -6,7 +6,7 @@ import {
 	IntakeTriggerUseCase,
 	SubscriptionRegistry,
 	WorkerExecutionUseCase,
-} from "@superagent/application";
+} from "@casiagent/application";
 import {
 	createFilterRules,
 	RouterState,
@@ -15,7 +15,7 @@ import {
 	type SourcePort,
 	TriggerStatus,
 	type TriggerVerdict,
-} from "@superagent/domain";
+} from "@casiagent/domain";
 import {
 	FakeAuthorization,
 	FakeLlm,

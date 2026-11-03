@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { type DispatchRecord, RouterState, SessionId } from "@superagent/domain";
+import { type DispatchRecord, RouterState, SessionId } from "@casiagent/domain";
 
 const record = (n: number): DispatchRecord => ({
 	triggerId: `t${n}`,

@@ -1,4 +1,4 @@
-import type { Observation, ObserveLogPort } from "@superagent/domain";
+import type { Observation, ObserveLogPort } from "@casiagent/domain";
 
 export class InMemoryObserveLog implements ObserveLogPort {
 	readonly #entries = new Map<string, Observation>();

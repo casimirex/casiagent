@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { type ContextSpillPort, SessionId } from "@superagent/domain";
+import { type ContextSpillPort, SessionId } from "@casiagent/domain";
 
 export function spillStoreContract(name: string, make: () => ContextSpillPort): void {
 	const s1 = SessionId.of("s1");

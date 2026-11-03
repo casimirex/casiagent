@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "superagent",
+      "name": "casiagent",
       "devDependencies": {
         "@biomejs/biome": "^2.6.4",
         "@types/bun": "^1.4.4",
@@ -11,31 +11,31 @@
       },
     },
     "apps/runtime": {
-      "name": "@superagent/runtime",
+      "name": "@casiagent/runtime",
       "version": "0.0.0",
       "dependencies": {
-        "@superagent/adapters": "workspace:*",
-        "@superagent/application": "workspace:*",
-        "@superagent/domain": "workspace:*",
+        "@casiagent/adapters": "workspace:*",
+        "@casiagent/application": "workspace:*",
+        "@casiagent/domain": "workspace:*",
       },
     },
     "packages/adapters": {
-      "name": "@superagent/adapters",
+      "name": "@casiagent/adapters",
       "version": "0.0.0",
       "dependencies": {
-        "@superagent/application": "workspace:*",
-        "@superagent/domain": "workspace:*",
+        "@casiagent/application": "workspace:*",
+        "@casiagent/domain": "workspace:*",
       },
     },
     "packages/application": {
-      "name": "@superagent/application",
+      "name": "@casiagent/application",
       "version": "0.0.0",
       "dependencies": {
-        "@superagent/domain": "workspace:*",
+        "@casiagent/domain": "workspace:*",
       },
     },
     "packages/domain": {
-      "name": "@superagent/domain",
+      "name": "@casiagent/domain",
       "version": "0.0.0",
     },
   },
@@ -62,13 +62,13 @@
 
     "@biomejs/cli-win32-x64": ["@biomejs/cli-win32-x64@2.6.4", "", { "os": "win32", "cpu": "x64" }, "sha512-pYsMy5AThiHFOZAsngg8qN4PurM6nInKBhVX7sbj3eNpRQqo1Hb0MgCwPL7VqVMrmcEEMj9Ks3qbkallR65e8g=="],
 
-    "@superagent/adapters": ["@superagent/adapters@workspace:packages/adapters"],
+    "@casiagent/adapters": ["@casiagent/adapters@workspace:packages/adapters"],
 
-    "@superagent/application": ["@superagent/application@workspace:packages/application"],
+    "@casiagent/application": ["@casiagent/application@workspace:packages/application"],
 
-    "@superagent/domain": ["@superagent/domain@workspace:packages/domain"],
+    "@casiagent/domain": ["@casiagent/domain@workspace:packages/domain"],
 
-    "@superagent/runtime": ["@superagent/runtime@workspace:apps/runtime"],
+    "@casiagent/runtime": ["@casiagent/runtime@workspace:apps/runtime"],
 
     "@types/bun": ["@types/bun@1.4.4", "", { "dependencies": { "bun-types": "1.4.4" } }, "sha512-9wkRDXUXK124pEnAutE6n/l18j+i9GC5IAHK8TmX/2nlySETmky0OU6yL5U8pW1AoKh++AN9auDCr647BfurjQ=="],
 

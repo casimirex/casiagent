@@ -1,5 +1,5 @@
 import type { Database } from "bun:sqlite";
-import type { Observation, ObserveLogPort } from "@superagent/domain";
+import type { Observation, ObserveLogPort } from "@casiagent/domain";
 
 export class SqliteObserveLog implements ObserveLogPort {
 	readonly #db: Database;

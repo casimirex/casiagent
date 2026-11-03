@@ -6,7 +6,7 @@ import {
 	type Subscription,
 	type SubscriptionStorePort,
 	ThreadKey,
-} from "@superagent/domain";
+} from "@casiagent/domain";
 
 export interface SubscriptionOwner {
 	readonly workerId: string;

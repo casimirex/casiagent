@@ -1,5 +1,5 @@
 {
-	"name": "@superagent/runtime",
+	"name": "@casiagent/runtime",
 	"version": "0.0.0",
 	"private": true,
 	"type": "module",
@@ -7,8 +7,8 @@
 		".": "./src/index.ts"
 	},
 	"dependencies": {
-		"@superagent/domain": "workspace:*",
-		"@superagent/application": "workspace:*",
-		"@superagent/adapters": "workspace:*"
+		"@casiagent/domain": "workspace:*",
+		"@casiagent/application": "workspace:*",
+		"@casiagent/adapters": "workspace:*"
 	}
 }

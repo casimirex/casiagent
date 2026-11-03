@@ -8,10 +8,23 @@ This roadmap describes how to build a SuperAgent-like system from scratch using 
 
 **Progress**: Phases 0–5 — done. Next: Phase 6 (real LLM and source adapters, runnable `main`).
 
+**Phase 6 plan (approved 2026-11-03; not in the original roadmap)**
+- `ClaudeLlmAdapter` (adapters, `@anthropic-ai/sdk`), model `claude-opus-5-5` for both calls; set effort explicitly (Opus 5.5 defaults to `medium`): `low` for `evaluateTrigger`, `high` for `executeTask`.
+  - `evaluateTrigger`: structured outputs (`output_config.format`, JSON schema); prompt bumps to `evaluate-trigger/v2` without the "respond with only JSON" line. The use case still validates.
+  - `executeTask`: SDK Tool Runner over our own tools; the run ends when the model calls a `submit_result` tool whose strict schema is `WorkResult`. Forced `tool_choice` is a 400 on Opus 5.5, so use `auto` + a prompt instruction. Stream; max_tokens ~64K.
+  - Server-side refusal fallbacks on (`fallbacks: "default"`, beta `server-side-fallback-2026-07-01`). A chain refusal on evaluation → REJECTED (fail closed, no retry loop); on a task → FAILED + panel.
+  - SDK timeout + default retries, typed error classes; per-task wall-clock limit (AbortController) and `task_budget` (beta). This closes the "hung LLM call heartbeats forever" gap.
+  - Caching: system prompt and tool list are byte-stable and cached; volatile content goes after them. Each run is a fresh API conversation built from our stored context; within a run, history is append-only (Opus 5.5 preserved thinking rejects edited history). `ContextManager` applies between runs only; long runs use API compaction.
+- Worker tools: run on the host in a per-WorkItem git worktree. Fixed tool set only: `read_file`, `list_files`, `search`, `write_file`, `run_tests` (command from config), `commit_and_push` (own branch only), `open_pr`. Paths are confined to the worktree; no general shell.
+- First source: GitHub, polling (`fetchEvents` every N s; no public URL needed). `explicitRequest` = bot @-mentioned, assigned, or a configured label. `reply` = issue/PR comment; the bot login goes in `selfAuthorIds`. GitHub token and Anthropic credentials come from env / `ant auth`, never from config files.
+- `apps/runtime/src/main.ts` + `config/casiagent.yaml`; `bun run start`; clean shutdown on SIGTERM.
+- Also: abandon AWAITING WorkItems after N days (+ panel item); cap EVALUATING → PENDING retries (+ panel item).
+- Tests: `bun run check` never calls the real API (stubbed `fetch`). One opt-in live smoke test behind an env var, which costs money: ask before running it.
+
 **Commands**: `bun run check` = type-check + lint + architecture check + unawaited-assertion check (`scripts/check-tests.ts`) + tests. Must pass before a phase is considered done.
 
 **Conventions**
-- The repo root is the workspace root (no nested `superagent/` folder).
+- The repo root is the workspace root (no nested `casiagent/` folder).
 - Named exports only. `interface` for object shapes. Status "enums" are `as const` objects + a derived union type (no TS `enum`).
 - `packages/domain` compiles with `types: []`, so Bun/Node globals are a type error there, not just a lint issue. `bun run arch` enforces the Dependency Rule on imports, type-only imports included (rules in `scripts/architecture.ts`).
 - Tests live in `packages/*/test/` and `apps/*/test/` and use `bun:test`. The roadmap's per-phase verify paths (e.g. `bun test packages/domain/src/services`) therefore map to `bun test packages/<pkg>`.
@@ -78,7 +91,7 @@ The official **`dsh-superagent-prototype`** is MIT-licensed TypeScript and serve
 > ├── biome.json
 > ├── packages/
 > │   ├── domain/
-> │   │   ├── package.json (name: "@superagent/domain")
+> │   │   ├── package.json (name: "@casiagent/domain")
 > │   │   ├── tsconfig.json
 > │   │   └── src/
 > │   │       ├── index.ts

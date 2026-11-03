@@ -46,7 +46,7 @@ describe("checkFile", () => {
 	});
 
 	test("domain: any bare import is rejected, including type-only and bun:", () => {
-		const code = `import type { X } from "@superagent/adapters";\nimport { Database } from "bun:sqlite";`;
+		const code = `import type { X } from "@casiagent/adapters";\nimport { Database } from "bun:sqlite";`;
 		expect(checkFile(domain, SRC, `${SRC}/A.ts`, code)).toHaveLength(2);
 	});
 
@@ -56,23 +56,21 @@ describe("checkFile", () => {
 		expect(checkFile(domain, SRC, file, `import "../src-old/x";`)).toHaveLength(1);
 	});
 
-	test("application: only @superagent/domain", () => {
+	test("application: only @casiagent/domain", () => {
 		const app = layer("packages/application");
 		const src = "/repo/packages/application/src";
-		expect(checkFile(app, src, `${src}/a.ts`, `import { T } from "@superagent/domain";`)).toEqual(
+		expect(checkFile(app, src, `${src}/a.ts`, `import { T } from "@casiagent/domain";`)).toEqual(
 			[],
 		);
-		expect(checkFile(app, src, `${src}/a.ts`, `import "@superagent/adapters";`)).toHaveLength(1);
+		expect(checkFile(app, src, `${src}/a.ts`, `import "@casiagent/adapters";`)).toHaveLength(1);
 		expect(checkFile(app, src, `${src}/a.ts`, `import "node:fs";`)).toHaveLength(1);
 	});
 
 	test("adapters: externals allowed, runtime is not", () => {
 		const adapters = layer("packages/adapters");
 		const src = "/repo/packages/adapters/src";
-		const ok = `import "bun:sqlite"; import "@superagent/application"; import "zod";`;
+		const ok = `import "bun:sqlite"; import "@casiagent/application"; import "zod";`;
 		expect(checkFile(adapters, src, `${src}/a.ts`, ok)).toEqual([]);
-		expect(checkFile(adapters, src, `${src}/a.ts`, `import "@superagent/runtime";`)).toHaveLength(
-			1,
-		);
+		expect(checkFile(adapters, src, `${src}/a.ts`, `import "@casiagent/runtime";`)).toHaveLength(1);
 	});
 });

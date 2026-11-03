@@ -1,4 +1,4 @@
-import type { IdGeneratorPort } from "@superagent/domain";
+import type { IdGeneratorPort } from "@casiagent/domain";
 
 export class UuidGenerator implements IdGeneratorPort {
 	next(): string {

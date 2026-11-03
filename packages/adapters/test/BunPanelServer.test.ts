@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { BunPanelServer, InMemoryAttentionStore, InMemoryObserveLog } from "@superagent/adapters";
+import { BunPanelServer, InMemoryAttentionStore, InMemoryObserveLog } from "@casiagent/adapters";
 import { attentionItem, observation } from "./contracts/attention.contract";
 
 const XSS = `<img src=x onerror="alert(1)">`;

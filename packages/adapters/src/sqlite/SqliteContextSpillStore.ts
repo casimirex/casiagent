@@ -4,7 +4,7 @@ import type {
 	ContextSpillPort,
 	SessionId,
 	SpilledMessage,
-} from "@superagent/domain";
+} from "@casiagent/domain";
 import { rankByKeywords } from "../context/keywordRecall";
 
 /**

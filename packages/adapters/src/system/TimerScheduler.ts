@@ -1,4 +1,4 @@
-import type { CancelSchedule, SchedulerPort } from "@superagent/domain";
+import type { CancelSchedule, SchedulerPort } from "@casiagent/domain";
 
 export class TimerScheduler implements SchedulerPort {
 	every(intervalMs: number, task: () => void): CancelSchedule {

@@ -5,7 +5,7 @@ import type {
 	SessionId,
 	SpilledMessage,
 	WorkerContext,
-} from "@superagent/domain";
+} from "@casiagent/domain";
 
 /** Estimates how many model tokens a text uses. */
 export type TokenEstimator = (text: string) => number;

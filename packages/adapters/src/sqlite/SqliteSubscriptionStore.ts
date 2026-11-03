@@ -1,5 +1,5 @@
 import type { Database } from "bun:sqlite";
-import type { SessionId, Subscription, SubscriptionStorePort, ThreadKey } from "@superagent/domain";
+import type { SessionId, Subscription, SubscriptionStorePort, ThreadKey } from "@casiagent/domain";
 
 interface SubscriptionRow {
 	thread_key: string;

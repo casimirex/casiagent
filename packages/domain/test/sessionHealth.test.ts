@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { assessSessionHealth, type Session, SessionId, SessionStatus } from "@superagent/domain";
+import { assessSessionHealth, type Session, SessionId, SessionStatus } from "@casiagent/domain";
 
 const policy = { stallAfterMs: 90_000, maxRestarts: 3 };
 const at = (overrides: Partial<Session>): Session => ({

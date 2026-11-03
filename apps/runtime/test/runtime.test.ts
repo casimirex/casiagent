@@ -7,7 +7,7 @@ import { afterAll, afterEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { parseAuthorizationConfig } from "@superagent/adapters";
+import { parseAuthorizationConfig } from "@casiagent/adapters";
 import {
 	type LlmPort,
 	type OutboundMessage,
@@ -19,7 +19,7 @@ import {
 	ThreadKey,
 	TriggerStatus,
 	type WorkResult,
-} from "@superagent/domain";
+} from "@casiagent/domain";
 import { createRuntime, type Runtime } from "../src/createRuntime";
 
 const REPO = SourceId.of("github:org/repo");
@@ -78,7 +78,7 @@ function event(overrides: Partial<SourceEvent>): SourceEvent {
 	};
 }
 
-const dir = mkdtempSync(join(tmpdir(), "superagent-rt-"));
+const dir = mkdtempSync(join(tmpdir(), "casiagent-rt-"));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
 let runtime: Runtime | undefined;
@@ -106,7 +106,7 @@ async function boot() {
 			ignoreBots: false,
 		},
 		authorizationRules: "Act on explicit requests from maintainers.",
-		selfAuthorIds: ["superagent"],
+		selfAuthorIds: ["casiagent"],
 		llm,
 		sources: [source],
 		watchdog: { intervalMs: 60_000 },
@@ -231,7 +231,7 @@ describe("runtime (composition root)", () => {
 			},
 		];
 		await send(event({}));
-		await send(event({ threadId: "pr-51", authorId: "superagent", authorIsBot: true }));
+		await send(event({ threadId: "pr-51", authorId: "casiagent", authorIsBot: true }));
 		expect(llm.tasks).toHaveLength(1);
 	});
 

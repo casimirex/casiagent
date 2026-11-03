@@ -1,5 +1,5 @@
 import type { Database } from "bun:sqlite";
-import type { AttentionItem, AttentionStorePort, ResolveResult } from "@superagent/domain";
+import type { AttentionItem, AttentionStorePort, ResolveResult } from "@casiagent/domain";
 
 export class SqliteAttentionStore implements AttentionStorePort {
 	readonly #db: Database;

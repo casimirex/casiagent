@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { DispatchWorkUseCase, IntakeTriggerUseCase } from "@superagent/application";
-import { RouterState, TriggerStatus, WorkItemStatus } from "@superagent/domain";
+import { DispatchWorkUseCase, IntakeTriggerUseCase } from "@casiagent/application";
+import { RouterState, TriggerStatus, WorkItemStatus } from "@casiagent/domain";
 import { FakeSessionStore, FixedClock, makeEvent, SequentialIds } from "./fakes";
 
 async function acceptedTriggers(store: FakeSessionStore, bodies: readonly string[]) {

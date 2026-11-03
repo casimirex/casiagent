@@ -18,7 +18,7 @@ import {
 	type TriggerVerdict,
 	transitionTrigger,
 	WorkItemStatus,
-} from "@superagent/domain";
+} from "@casiagent/domain";
 import {
 	EVALUATE_TRIGGER_PROMPT_VERSION,
 	renderEvaluateTriggerPrompt,

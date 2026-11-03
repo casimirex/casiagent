@@ -5,8 +5,8 @@ import {
 	InMemorySubscriptionStore,
 	IntervalWatchdog,
 	type IntervalWatchdogDeps,
-} from "@superagent/adapters";
-import { type Session, SessionId, SessionStatus, WorkItemStatus } from "@superagent/domain";
+} from "@casiagent/adapters";
+import { type Session, SessionId, SessionStatus, WorkItemStatus } from "@casiagent/domain";
 import { session, subscription, workItem } from "./contracts/fixtures";
 
 class ManualClock {

@@ -1,4 +1,4 @@
-import { ContextManager, type PanelPort } from "@superagent/application";
+import { ContextManager, type PanelPort } from "@casiagent/application";
 import {
 	type Action,
 	type AttentionItem,
@@ -31,7 +31,7 @@ import {
 	type WorkItem,
 	type WorkItemStatus,
 	type WorkResult,
-} from "@superagent/domain";
+} from "@casiagent/domain";
 
 /** Yield to the event loop so concurrent callers interleave at every store call. */
 const tick = () => new Promise<void>((r) => setTimeout(r, 0));

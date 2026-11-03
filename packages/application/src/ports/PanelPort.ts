@@ -1,4 +1,4 @@
-import type { AttentionItem } from "@superagent/domain";
+import type { AttentionItem } from "@casiagent/domain";
 
 /**
  * Application output port: surface something a human must act on. The panel shows only

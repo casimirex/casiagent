@@ -3,8 +3,8 @@ import {
 	IntakeTriggerUseCase,
 	SubscriptionRegistry,
 	SubscriptionRouter,
-} from "@superagent/application";
-import { SessionId, SourceId, TriggerStatus } from "@superagent/domain";
+} from "@casiagent/application";
+import { SessionId, SourceId, TriggerStatus } from "@casiagent/domain";
 import {
 	FakeAuthorization,
 	FakeObserveLog,
@@ -31,7 +31,7 @@ function setup() {
 		clock: new FixedClock(),
 		registry,
 		intake: new IntakeTriggerUseCase({ store }),
-		selfAuthorIds: new Set(["superagent-bot"]),
+		selfAuthorIds: new Set(["casiagent-bot"]),
 	});
 	return { store, subscriptionStore, registry, router };
 }
@@ -80,7 +80,7 @@ describe("SubscriptionRouter.routeEvent", () => {
 	test("the agent's own posts are IGNORED, so its replies can't loop back to it", async () => {
 		const { store, registry, router } = setup();
 		await registry.subscribe(REPO, "thread-A", owner(1));
-		const own = makeEvent({ threadId: "thread-A", authorId: "superagent-bot", authorIsBot: true });
+		const own = makeEvent({ threadId: "thread-A", authorId: "casiagent-bot", authorIsBot: true });
 		expect((await router.routeEvent(own)).type).toBe("IGNORED");
 		expect(store.triggers.size).toBe(0);
 	});

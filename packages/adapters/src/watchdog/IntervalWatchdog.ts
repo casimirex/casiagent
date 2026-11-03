@@ -12,7 +12,7 @@ import {
 	type WatchdogPolicy,
 	type WatchdogPort,
 	WorkItemStatus,
-} from "@superagent/domain";
+} from "@casiagent/domain";
 
 export interface IntervalWatchdogDeps {
 	readonly store: SessionStorePort;

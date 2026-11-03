@@ -4,7 +4,7 @@ import type {
 	Trigger,
 	WorkerContext,
 	WorkResult,
-} from "@superagent/domain";
+} from "@casiagent/domain";
 
 type EventLike = Pick<SourceEvent, "sourceId" | "threadId" | "authorId" | "payload">;
 

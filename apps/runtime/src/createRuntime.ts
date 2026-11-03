@@ -13,7 +13,7 @@ import {
 	SystemClock,
 	TimerScheduler,
 	UuidGenerator,
-} from "@superagent/adapters";
+} from "@casiagent/adapters";
 import {
 	ContextManager,
 	DispatchWorkUseCase,
@@ -25,7 +25,7 @@ import {
 	SubscriptionRouter,
 	type WorkerAssignment,
 	WorkerExecutionUseCase,
-} from "@superagent/application";
+} from "@casiagent/application";
 import {
 	type ClockPort,
 	createFilterRules,
@@ -38,7 +38,7 @@ import {
 	type SourcePort,
 	TriggerStatus,
 	type Unsubscribe,
-} from "@superagent/domain";
+} from "@casiagent/domain";
 
 export interface RuntimeConfig {
 	/** SQLite file path, or ":memory:". */
@@ -186,7 +186,7 @@ function wire(config: RuntimeConfig) {
 }
 
 function defaultOnError(error: unknown, context: string): void {
-	console.error(`[superagent] ${context}:`, error);
+	console.error(`[casiagent] ${context}:`, error);
 }
 
 export function createRuntime(config: RuntimeConfig): Runtime {

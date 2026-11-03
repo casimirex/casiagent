@@ -1,4 +1,4 @@
-# SuperAgent authorization policy. Copy to config/authorization.yaml and edit.
+# casiagent authorization policy. Copy to config/authorization.yaml and edit.
 # Validated at startup: unknown keys, bad regexes and unsafe defaults are rejected.
 
 # Who may make the agent act. Anyone else is denied.

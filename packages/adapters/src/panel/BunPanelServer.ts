@@ -1,5 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
-import type { AttentionStorePort, ClockPort, ObserveLogPort } from "@superagent/domain";
+import type { AttentionStorePort, ClockPort, ObserveLogPort } from "@casiagent/domain";
 import type { Server } from "bun";
 
 export interface PanelServerOptions {

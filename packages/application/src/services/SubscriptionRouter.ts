@@ -8,7 +8,7 @@ import {
 	type SourceEvent,
 	type Subscription,
 	type Trigger,
-} from "@superagent/domain";
+} from "@casiagent/domain";
 import type { IntakeTriggerUseCase } from "../use-cases/IntakeTriggerUseCase";
 import type { SubscriptionRegistry } from "./SubscriptionRegistry";
 

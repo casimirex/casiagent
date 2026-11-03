@@ -4,7 +4,7 @@ import type {
 	AttentionStorePort,
 	Observation,
 	ObserveLogPort,
-} from "@superagent/domain";
+} from "@casiagent/domain";
 
 export const attentionItem = (id: string, createdAt: number): AttentionItem => ({
 	id,

@@ -12,7 +12,7 @@ import {
 	transitionTrigger,
 	type WorkItem,
 	WorkItemStatus,
-} from "@superagent/domain";
+} from "@casiagent/domain";
 import { buildWorkerContext } from "../services/buildWorkerContext";
 
 export interface DispatchWorkDeps {

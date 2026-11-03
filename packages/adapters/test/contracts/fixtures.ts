@@ -10,7 +10,7 @@ import {
 	TriggerStatus,
 	type WorkItem,
 	WorkItemStatus,
-} from "@superagent/domain";
+} from "@casiagent/domain";
 
 export const REPO = SourceId.of("github:org/repo");
 

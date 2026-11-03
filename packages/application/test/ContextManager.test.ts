@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { approximateTokens, ContextManager } from "@superagent/application";
-import { type ContextMessage, type Session, SessionId, SessionStatus } from "@superagent/domain";
+import { approximateTokens, ContextManager } from "@casiagent/application";
+import { type ContextMessage, type Session, SessionId, SessionStatus } from "@casiagent/domain";
 import { FakeSpill } from "./fakes";
 
 const TASK: ContextMessage = { role: "user", content: "TASK: fix the flaky checkout test" };

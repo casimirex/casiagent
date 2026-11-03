@@ -6,7 +6,7 @@ import {
 	type Trigger,
 	TriggerStatus,
 	WorkItemStatus,
-} from "@superagent/domain";
+} from "@casiagent/domain";
 import { event, mutate, session, trigger, workItem } from "./fixtures";
 
 /** Behaviour every SessionStorePort implementation must have. */

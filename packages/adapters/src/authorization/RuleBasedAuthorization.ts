@@ -5,7 +5,7 @@ import {
 	type AuthorizationPort,
 	type AuthorizationVerdict,
 	type SourceId,
-} from "@superagent/domain";
+} from "@casiagent/domain";
 import type { AuthorizationConfig, Default, RuleAction, RuleScope } from "./authorizationConfig";
 
 interface CompiledRule {

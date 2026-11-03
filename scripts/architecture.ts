@@ -2,8 +2,8 @@
  * The Dependency Rule, as data plus pure checks:
  *
  *   domain       -> (nothing outside itself)
- *   application  -> @superagent/domain
- *   adapters     -> @superagent/domain, @superagent/application, external libraries, bun:/node:
+ *   application  -> @casiagent/domain
+ *   adapters     -> @casiagent/domain, @casiagent/application, external libraries, bun:/node:
  *   apps/*       -> anything (composition root)
  *
  * Relative imports may not leave their own package's `src/` directory.
@@ -25,14 +25,14 @@ export const LAYERS: readonly LayerRule[] = [
 	{
 		dir: "packages/application",
 		checkBare: (s) =>
-			s === "@superagent/domain"
+			s === "@casiagent/domain"
 				? undefined
-				: `application may only import @superagent/domain, not "${s}"`,
+				: `application may only import @casiagent/domain, not "${s}"`,
 	},
 	{
 		dir: "packages/adapters",
 		checkBare: (s) =>
-			s.startsWith("@superagent/") && s !== "@superagent/domain" && s !== "@superagent/application"
+			s.startsWith("@casiagent/") && s !== "@casiagent/domain" && s !== "@casiagent/application"
 				? `adapters must not import "${s}"`
 				: undefined,
 	},

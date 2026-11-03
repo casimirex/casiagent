@@ -7,8 +7,8 @@ import {
 	loadAuthorizationConfig,
 	parseAuthorizationConfig,
 	RuleBasedAuthorization,
-} from "@superagent/adapters";
-import { type ActionOrigin, AuthorizationDecision, SourceId } from "@superagent/domain";
+} from "@casiagent/adapters";
+import { type ActionOrigin, AuthorizationDecision, SourceId } from "@casiagent/domain";
 
 const REPO = SourceId.of("github:org/repo");
 const OTHER = SourceId.of("github:org/other");
@@ -132,7 +132,7 @@ describe("parseAuthorizationConfig", () => {
 });
 
 describe("loadAuthorizationConfig", () => {
-	const dir = mkdtempSync(join(tmpdir(), "superagent-auth-"));
+	const dir = mkdtempSync(join(tmpdir(), "casiagent-auth-"));
 	afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
 	test("reads the roadmap's YAML example", async () => {

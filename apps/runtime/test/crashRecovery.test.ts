@@ -18,7 +18,7 @@ import {
 	SqliteSessionStore,
 	SqliteSubscriptionStore,
 	UuidGenerator,
-} from "@superagent/adapters";
+} from "@casiagent/adapters";
 import {
 	ContextManager,
 	DispatchWorkUseCase,
@@ -26,7 +26,7 @@ import {
 	IntakeTriggerUseCase,
 	SubscriptionRegistry,
 	WorkerExecutionUseCase,
-} from "@superagent/application";
+} from "@casiagent/application";
 import {
 	createFilterRules,
 	type LlmPort,
@@ -37,10 +37,10 @@ import {
 	type SourcePort,
 	WorkItemStatus,
 	type WorkResult,
-} from "@superagent/domain";
+} from "@casiagent/domain";
 
 const REPO = SourceId.of("github:org/repo");
-const dir = mkdtempSync(join(tmpdir(), "superagent-crash-"));
+const dir = mkdtempSync(join(tmpdir(), "casiagent-crash-"));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
 class Clock {

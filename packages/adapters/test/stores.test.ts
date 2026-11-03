@@ -15,8 +15,8 @@ import {
 	SqliteObserveLog,
 	SqliteSessionStore,
 	SqliteSubscriptionStore,
-} from "@superagent/adapters";
-import { SessionId, TriggerStatus } from "@superagent/domain";
+} from "@casiagent/adapters";
+import { SessionId, TriggerStatus } from "@casiagent/domain";
 import { attentionStoreContract, observeLogContract } from "./contracts/attention.contract";
 import { session, subscription, trigger, workItem } from "./contracts/fixtures";
 import { sessionStoreContract } from "./contracts/sessionStore.contract";
@@ -37,7 +37,7 @@ spillStoreContract(
 );
 
 describe("SQLite on disk", () => {
-	const dir = mkdtempSync(join(tmpdir(), "superagent-test-"));
+	const dir = mkdtempSync(join(tmpdir(), "casiagent-test-"));
 	afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
 	test("state survives closing and reopening the database (process restart)", async () => {

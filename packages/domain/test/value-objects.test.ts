@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { DomainError, SessionId, SourceId } from "@superagent/domain";
+import { DomainError, SessionId, SourceId } from "@casiagent/domain";
 
 describe("SourceId", () => {
 	test.each(["github:org/repo", "slack:C0123", "ci-system:pipeline/42"])("accepts %p", (raw) => {
