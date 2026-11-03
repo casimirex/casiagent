@@ -9,6 +9,10 @@ export type TriggerPayload = Readonly<Record<string, unknown>>;
 export interface Trigger {
 	readonly id: string;
 	readonly sourceId: SourceId;
+	/** Conversation the event came from; results are written back here. */
+	readonly threadId?: string;
+	readonly authorId: string;
+	readonly authorIsBot: boolean;
 	readonly payload: TriggerPayload;
 	/** Epoch milliseconds when the source event happened. */
 	readonly timestamp: number;

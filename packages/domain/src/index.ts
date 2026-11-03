@@ -20,6 +20,8 @@ export {
 	type WorkItem,
 	type WorkResult,
 } from "./entities/WorkItem";
+export type { ClockPort } from "./ports/ClockPort";
+export type { IdGeneratorPort } from "./ports/IdGeneratorPort";
 export type {
 	LlmPort,
 	TaskExecutionRequest,
@@ -28,8 +30,15 @@ export type {
 	TriggerVerdict,
 } from "./ports/LlmPort";
 export type { SessionStorePort } from "./ports/SessionStorePort";
-export type { SourceEvent, SourceEventHandler, SourcePort, Unsubscribe } from "./ports/SourcePort";
+export type {
+	OutboundMessage,
+	SourceEvent,
+	SourceEventHandler,
+	SourcePort,
+	Unsubscribe,
+} from "./ports/SourcePort";
 export type { WatchdogPort } from "./ports/WatchdogPort";
+export { type DispatchRecord, RouterState } from "./value-objects/RouterState";
 export { SessionId } from "./value-objects/SessionId";
 export { SourceId } from "./value-objects/SourceId";
 export { SessionStatus, TriggerStatus, WorkItemStatus } from "./value-objects/TaskStatus";

@@ -18,6 +18,8 @@ import {
 const trigger: Trigger = {
 	id: "t1",
 	sourceId: SourceId.of("github:org/repo"),
+	authorId: "alice",
+	authorIsBot: false,
 	payload: { body: "please fix the bug" },
 	timestamp: 1_000,
 	status: TriggerStatus.PENDING,

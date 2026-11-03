@@ -6,7 +6,7 @@ This roadmap describes how to build a SuperAgent-like system from scratch using 
 
 ## Working Notes (keep current)
 
-**Progress**: Phase 0 — done. Next: Phase 1.
+**Progress**: Phase 0 — done. Phase 1 — done. Next: Phase 2.
 
 **Commands**: `bun run check` = type-check + lint + architecture check + tests. Must pass before a phase is considered done.
 
@@ -19,8 +19,12 @@ This roadmap describes how to build a SuperAgent-like system from scratch using 
 
 **Gaps in the roadmap below, and how we resolve them** (ports grow in the phase that first needs them; record each extension here):
 - _Status values_: Trigger uses `PENDING | EVALUATING | ACCEPTED | REJECTED | CONSUMED`, plus `OBSERVED` added in Phase 5. WorkItem uses `PENDING | RUNNING | COMPLETED | FAILED | ABANDONED` (Phase 3 refers to COMPLETED/ABANDONED). Session uses `ACTIVE | STALLED | COMPLETED | FAILED` (Phase 4 refers to STALLED).
-- _Phase 1_: `SessionStorePort` only has `save/load/listActive`, but Phase 1 also persists Triggers and WorkItems and "spawns" Workers through it. Plan: add trigger/work-item persistence methods, and model spawning as a separate `WorkerSpawnerPort`, not as a store method.
-- _Phase 1_: Writing results back needs a write method (e.g. `reply`) on `SourcePort`, which today only has `subscribe/fetchEvents`.
+- _Phase 1 (done)_: `SessionStorePort` gained `createTrigger` (insert-only), `loadTrigger`, `listTriggersByStatus`, `compareAndSetTriggerStatus` (atomic; every Trigger status change goes through it) and `saveWorkItem/loadWorkItem`. Any persistent adapter must keep `createTrigger` insert-only and the CAS atomic.
+- _Phase 1 (done)_: "Spawning" a Worker = persisting an ACTIVE session. `DispatchWorkUseCase` returns `DispatchRecord`s and the caller runs `WorkerExecutionUseCase` for each. No spawner port.
+- _Phase 1 (done)_: `SourcePort.reply(OutboundMessage)` added. `Trigger` gained `threadId?`, `authorId`, `authorIsBot` (copied from `SourceEvent`; Phase 2/3 need them). Trigger ids are `${sourceId}#${eventId}`, so intake is idempotent.
+- _Phase 1 (done)_: Domain ports `IdGeneratorPort` and `ClockPort` added; adapters `UuidGenerator`, `SystemClock`, `InMemorySessionStore`.
+- _Phase 1 (done)_: The Worker persists its result before replying; a failed reply is reported as `delivery: { delivered: false }`, never re-runs the task. A RUNNING WorkItem is resumed rather than rejected (for the Phase 4 Watchdog).
+- _Phase 4 must handle_: a crash between Dispatch claiming a Trigger (→ CONSUMED) and saving its session leaves a CONSUMED Trigger with no WorkItem. Recovery should reconcile these.
 - _Phase 2_: The LLM prompt needs the work-queue depth, so the store needs a count query.
 - _Phase 4_: The Watchdog needs `lastHeartbeatAt` and `restartCount` on `Session`; both were added in Phase 0. "Kill the session process" means simulating a stalled session, since Workers are not OS processes. The "panel store" used for escalation comes before `PanelPort` (Phase 5), so add a minimal `AttentionSinkPort` in Phase 4.
 - _Not covered by any phase_: real `LlmPort` (Claude API) and `SourcePort` (e.g. GitHub) adapters. Add them as a Phase 6 once Phase 5 is done.
