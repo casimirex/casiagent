@@ -10,6 +10,14 @@ export {
 export { RuleBasedAuthorization } from "./authorization/RuleBasedAuthorization";
 export { InMemoryContextSpillStore } from "./context/InMemoryContextSpillStore";
 export { keywordTerms, rankByKeywords } from "./context/keywordRecall";
+export {
+	ClaudeLlmAdapter,
+	type ClaudeLlmAdapterOptions,
+	ModelRefusalError,
+	type TaskToolset,
+	type TaskToolsetFactory,
+	toMessages,
+} from "./llm/ClaudeLlmAdapter";
 export { InMemoryObserveLog } from "./observe/InMemoryObserveLog";
 export { BunPanelServer, type PanelServerOptions } from "./panel/BunPanelServer";
 export { migrate, openDatabase, SCHEMA_VERSION } from "./sqlite/database";

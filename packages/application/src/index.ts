@@ -6,6 +6,11 @@ export {
 	type EvaluateTriggerPromptInput,
 	renderEvaluateTriggerPrompt,
 } from "./prompts/evaluateTrigger";
+export {
+	EXECUTE_TASK_PROMPT_VERSION,
+	EXECUTE_TASK_SYSTEM_PROMPT,
+	SUBMIT_RESULT_TOOL,
+} from "./prompts/executeTask";
 export { buildWorkerContext, eventMessage, resultMessage } from "./services/buildWorkerContext";
 export {
 	approximateTokens,
