@@ -1,0 +1,22 @@
+{
+	"name": "superagent",
+	"private": true,
+	"type": "module",
+	"workspaces": [
+		"packages/*",
+		"apps/*"
+	],
+	"scripts": {
+		"type-check": "tsc -p packages/domain && tsc -p packages/application && tsc -p packages/adapters && tsc -p apps/runtime && tsc -p tsconfig.json",
+		"lint": "biome check .",
+		"lint:fix": "biome check --write .",
+		"arch": "bun scripts/check-architecture.ts",
+		"test": "bun test",
+		"check": "bun run type-check && bun run lint && bun run arch && bun test"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.6.4",
+		"@types/bun": "^1.4.4",
+		"typescript": "^7.0.2"
+	}
+}
