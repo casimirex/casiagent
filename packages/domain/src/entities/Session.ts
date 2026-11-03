@@ -28,7 +28,13 @@ export interface Session {
 }
 
 export const SESSION_TRANSITIONS: TransitionTable<SessionStatus> = {
-	[SessionStatus.ACTIVE]: [SessionStatus.STALLED, SessionStatus.COMPLETED, SessionStatus.FAILED],
+	[SessionStatus.ACTIVE]: [
+		SessionStatus.WAITING,
+		SessionStatus.STALLED,
+		SessionStatus.COMPLETED,
+		SessionStatus.FAILED,
+	],
+	[SessionStatus.WAITING]: [SessionStatus.ACTIVE, SessionStatus.COMPLETED, SessionStatus.FAILED],
 	[SessionStatus.STALLED]: [SessionStatus.ACTIVE, SessionStatus.FAILED],
 	[SessionStatus.COMPLETED]: [],
 	[SessionStatus.FAILED]: [],

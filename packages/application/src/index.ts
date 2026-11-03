@@ -5,7 +5,17 @@ export {
 	type EvaluateTriggerPromptInput,
 	renderEvaluateTriggerPrompt,
 } from "./prompts/evaluateTrigger";
-export { buildWorkerContext } from "./services/buildWorkerContext";
+export { buildWorkerContext, eventMessage, resultMessage } from "./services/buildWorkerContext";
+export {
+	type SubscriptionOwner,
+	SubscriptionRegistry,
+	type SubscriptionRegistryDeps,
+} from "./services/SubscriptionRegistry";
+export {
+	type RoutingDecision,
+	SubscriptionRouter,
+	type SubscriptionRouterDeps,
+} from "./services/SubscriptionRouter";
 export {
 	type DispatchOutcome,
 	type DispatchWorkDeps,
@@ -24,6 +34,7 @@ export {
 } from "./use-cases/IntakeTriggerUseCase";
 export {
 	type DeliveryStatus,
+	type FollowUpOutcome,
 	type WorkerAssignment,
 	type WorkerExecutionDeps,
 	WorkerExecutionUseCase,

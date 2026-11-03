@@ -15,6 +15,8 @@ export type TriggerStatus = (typeof TriggerStatus)[keyof typeof TriggerStatus];
 export const WorkItemStatus = {
 	PENDING: "PENDING",
 	RUNNING: "RUNNING",
+	/** Produced a reviewable artifact (e.g. a PR) and is waiting for follow-up events. */
+	AWAITING: "AWAITING",
 	COMPLETED: "COMPLETED",
 	FAILED: "FAILED",
 	ABANDONED: "ABANDONED",
@@ -23,6 +25,8 @@ export type WorkItemStatus = (typeof WorkItemStatus)[keyof typeof WorkItemStatus
 
 export const SessionStatus = {
 	ACTIVE: "ACTIVE",
+	/** Idle until a follow-up event arrives. Not watched for heartbeats. */
+	WAITING: "WAITING",
 	STALLED: "STALLED",
 	COMPLETED: "COMPLETED",
 	FAILED: "FAILED",

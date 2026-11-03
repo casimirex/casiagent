@@ -3,6 +3,7 @@ import {
 	type SessionId,
 	SessionStatus,
 	type SessionStorePort,
+	type SourceEvent,
 	type Trigger,
 	type TriggerStatus,
 	type WorkItem,
@@ -25,6 +26,9 @@ export class InMemorySessionStore implements SessionStorePort {
 	readonly #sessions = new Map<string, Session>();
 	readonly #triggers = new Map<string, Trigger>();
 	readonly #workItems = new Map<string, WorkItem>();
+	readonly #inboxes = new Map<string, SourceEvent[]>();
+	/** Event ids ever enqueued per session, so a re-delivered event is never processed twice. */
+	readonly #seenFollowUps = new Map<string, Set<string>>();
 
 	async save(session: Session): Promise<void> {
 		this.#sessions.set(session.id, structuredClone(session));
@@ -73,6 +77,40 @@ export class InMemorySessionStore implements SessionStorePort {
 
 	async loadWorkItem(id: string): Promise<WorkItem | undefined> {
 		return cloneOrUndefined(this.#workItems.get(id));
+	}
+
+	async compareAndSetWorkItem(
+		expectedStatus: WorkItemStatus,
+		next: WorkItem,
+	): Promise<WorkItem | undefined> {
+		const current = this.#workItems.get(next.id);
+		if (current === undefined || current.status !== expectedStatus) return undefined;
+		this.#workItems.set(next.id, structuredClone(next));
+		return structuredClone(next);
+	}
+
+	async enqueueFollowUp(sessionId: SessionId, event: SourceEvent): Promise<boolean> {
+		let seen = this.#seenFollowUps.get(sessionId);
+		if (seen === undefined) {
+			seen = new Set();
+			this.#seenFollowUps.set(sessionId, seen);
+		}
+		if (seen.has(event.id)) return false;
+		seen.add(event.id);
+		const inbox = this.#inboxes.get(sessionId) ?? [];
+		inbox.push(structuredClone(event));
+		this.#inboxes.set(sessionId, inbox);
+		return true;
+	}
+
+	async drainFollowUps(sessionId: SessionId): Promise<readonly SourceEvent[]> {
+		const inbox = this.#inboxes.get(sessionId) ?? [];
+		this.#inboxes.delete(sessionId);
+		return inbox;
+	}
+
+	async countFollowUps(sessionId: SessionId): Promise<number> {
+		return this.#inboxes.get(sessionId)?.length ?? 0;
 	}
 
 	async countWorkItemsByStatus(statuses: readonly WorkItemStatus[]): Promise<number> {

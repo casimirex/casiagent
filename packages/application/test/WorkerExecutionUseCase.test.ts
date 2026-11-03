@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
 	DispatchWorkUseCase,
 	IntakeTriggerUseCase,
+	SubscriptionRegistry,
 	UseCaseError,
 	WorkerExecutionUseCase,
 } from "@superagent/application";
@@ -18,6 +19,7 @@ import {
 	FakeLlm,
 	FakeSessionStore,
 	FakeSource,
+	FakeSubscriptionStore,
 	FixedClock,
 	makeEvent,
 	SequentialIds,
@@ -41,8 +43,20 @@ async function setup(bodies: readonly string[] = ["fix the flaky test"]) {
 		clock,
 	}).execute(RouterState.empty());
 	const sources = new Map<SourceId, SourcePort>([[source.sourceId, source]]);
-	const worker = new WorkerExecutionUseCase({ store, llm, sources, clock });
-	return { store, clock, llm, source, sources, worker, dispatched };
+	const subscriptionStore = new FakeSubscriptionStore();
+	const subscriptions = new SubscriptionRegistry({ store: subscriptionStore, clock });
+	const worker = new WorkerExecutionUseCase({ store, llm, sources, subscriptions, clock });
+	return {
+		store,
+		clock,
+		llm,
+		source,
+		sources,
+		subscriptions,
+		subscriptionStore,
+		worker,
+		dispatched,
+	};
 }
 
 function only<T>(items: readonly T[]): T {
@@ -117,8 +131,14 @@ describe("WorkerExecutionUseCase", () => {
 	});
 
 	test("reports undelivered when no source is registered for the trigger", async () => {
-		const { store, llm, clock, dispatched } = await setup();
-		const worker = new WorkerExecutionUseCase({ store, llm, sources: new Map(), clock });
+		const { store, llm, clock, subscriptions, dispatched } = await setup();
+		const worker = new WorkerExecutionUseCase({
+			store,
+			llm,
+			sources: new Map(),
+			subscriptions,
+			clock,
+		});
 		const outcome = await worker.execute(only(dispatched));
 		expect(outcome).toMatchObject({ status: "COMPLETED", delivery: { delivered: false } });
 	});

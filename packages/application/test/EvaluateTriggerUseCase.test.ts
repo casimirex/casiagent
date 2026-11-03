@@ -4,6 +4,7 @@ import {
 	EVALUATE_TRIGGER_PROMPT_VERSION,
 	EvaluateTriggerUseCase,
 	IntakeTriggerUseCase,
+	SubscriptionRegistry,
 	WorkerExecutionUseCase,
 } from "@superagent/application";
 import {
@@ -19,6 +20,7 @@ import {
 	FakeLlm,
 	FakeSessionStore,
 	FakeSource,
+	FakeSubscriptionStore,
 	FixedClock,
 	makeEvent,
 	SequentialIds,
@@ -261,6 +263,7 @@ describe("Phase 1 + 2 together", () => {
 			store,
 			llm,
 			sources: new Map<SourceId, SourcePort>([[source.sourceId, source]]),
+			subscriptions: new SubscriptionRegistry({ store: new FakeSubscriptionStore(), clock }),
 			clock,
 		});
 

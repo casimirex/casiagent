@@ -10,7 +10,10 @@ import {
 	type SourceEvent,
 	SourceId,
 	type SourcePort,
+	type Subscription,
+	type SubscriptionStorePort,
 	type TaskExecutionRequest,
+	type ThreadKey,
 	type Trigger,
 	type TriggerEvaluationRequest,
 	type TriggerStatus,
@@ -84,6 +87,33 @@ export class FakeSessionStore implements SessionStorePort {
 		const w = this.workItems.get(id);
 		return w && structuredClone(w);
 	}
+	async compareAndSetWorkItem(expectedStatus: WorkItemStatus, next: WorkItem) {
+		await tick();
+		const w = this.workItems.get(next.id);
+		if (w === undefined || w.status !== expectedStatus) return undefined;
+		this.workItems.set(next.id, structuredClone(next));
+		return structuredClone(next);
+	}
+	readonly inboxes = new Map<string, SourceEvent[]>();
+	readonly #seen = new Set<string>();
+	async enqueueFollowUp(sessionId: SessionId, event: SourceEvent) {
+		await tick();
+		const key = `${sessionId}|${event.id}`;
+		if (this.#seen.has(key)) return false;
+		this.#seen.add(key);
+		this.inboxes.set(sessionId, [...(this.inboxes.get(sessionId) ?? []), structuredClone(event)]);
+		return true;
+	}
+	async drainFollowUps(sessionId: SessionId) {
+		await tick();
+		const inbox = this.inboxes.get(sessionId) ?? [];
+		this.inboxes.delete(sessionId);
+		return inbox;
+	}
+	async countFollowUps(sessionId: SessionId) {
+		await tick();
+		return this.inboxes.get(sessionId)?.length ?? 0;
+	}
 	async countWorkItemsByStatus(statuses: readonly WorkItemStatus[]) {
 		await tick();
 		return [...this.workItems.values()].filter((w) => statuses.includes(w.status)).length;
@@ -155,4 +185,34 @@ export function makeEvent(overrides: Partial<SourceEvent> = {}): SourceEvent {
 		timestamp: 500,
 		...overrides,
 	};
+}
+
+export class FakeSubscriptionStore implements SubscriptionStorePort {
+	readonly byThread = new Map<string, Subscription>();
+	async subscribe(sub: Subscription) {
+		await tick();
+		const existing = this.byThread.get(sub.threadKey);
+		if (existing !== undefined && existing.workerId !== sub.workerId) return existing;
+		this.byThread.set(sub.threadKey, sub);
+		return sub;
+	}
+	async findByThread(threadKey: ThreadKey) {
+		await tick();
+		return this.byThread.get(threadKey);
+	}
+	async listByWorker(workerId: string) {
+		await tick();
+		return [...this.byThread.values()].filter((s) => s.workerId === workerId);
+	}
+	async removeByWorker(workerId: string) {
+		await tick();
+		let n = 0;
+		for (const [k, s] of this.byThread) {
+			if (s.workerId === workerId) {
+				this.byThread.delete(k);
+				n += 1;
+			}
+		}
+		return n;
+	}
 }

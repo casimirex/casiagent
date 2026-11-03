@@ -3,6 +3,7 @@ import type { Trigger } from "../entities/Trigger";
 import type { WorkItem } from "../entities/WorkItem";
 import type { SessionId } from "../value-objects/SessionId";
 import type { TriggerStatus, WorkItemStatus } from "../value-objects/TaskStatus";
+import type { SourceEvent } from "./SourcePort";
 
 /**
  * Persistence for Triggers, WorkItems and Worker sessions.
@@ -14,7 +15,7 @@ export interface SessionStorePort {
 	/** Insert or replace the full session state. */
 	save(session: Session): Promise<void>;
 	load(id: SessionId): Promise<Session | undefined>;
-	/** Sessions whose status is not terminal (ACTIVE or STALLED). */
+	/** Sessions that should be running: ACTIVE or STALLED (not WAITING, not terminal). */
 	listActive(): Promise<readonly Session[]>;
 
 	/** Insert a new Trigger. Returns false, and changes nothing, if the id already exists. */
@@ -30,8 +31,23 @@ export interface SessionStorePort {
 	 */
 	compareAndSetTrigger(expectedStatus: TriggerStatus, next: Trigger): Promise<Trigger | undefined>;
 
-	/** Insert or replace a WorkItem. */
+	/** Insert or replace a WorkItem. Use for creation; use compareAndSetWorkItem for status changes. */
 	saveWorkItem(item: WorkItem): Promise<void>;
+	/** Atomically replace a WorkItem if its stored status is still `expectedStatus`. Same contract as compareAndSetTrigger. */
+	compareAndSetWorkItem(
+		expectedStatus: WorkItemStatus,
+		next: WorkItem,
+	): Promise<WorkItem | undefined>;
 	loadWorkItem(id: string): Promise<WorkItem | undefined>;
 	countWorkItemsByStatus(statuses: readonly WorkItemStatus[]): Promise<number>;
+
+	/**
+	 * Follow-up inbox: events routed directly to a session, waiting to be processed.
+	 * Kept apart from the Session record so saving a session never drops queued events.
+	 */
+	/** Append atomically. Returns false, and changes nothing, if this event id is already queued or was drained before. */
+	enqueueFollowUp(sessionId: SessionId, event: SourceEvent): Promise<boolean>;
+	/** Atomically remove and return all queued events, oldest first. */
+	drainFollowUps(sessionId: SessionId): Promise<readonly SourceEvent[]>;
+	countFollowUps(sessionId: SessionId): Promise<number>;
 }

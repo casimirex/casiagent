@@ -6,7 +6,7 @@ This roadmap describes how to build a SuperAgent-like system from scratch using 
 
 ## Working Notes (keep current)
 
-**Progress**: Phases 0–2 — done. Next: Phase 3.
+**Progress**: Phases 0–3 — done. Next: Phase 4.
 
 **Commands**: `bun run check` = type-check + lint + architecture check + tests. Must pass before a phase is considered done.
 
@@ -30,6 +30,12 @@ This roadmap describes how to build a SuperAgent-like system from scratch using 
 - _Phase 2 (done)_: The application renders the prompt (`application/src/prompts/evaluateTrigger.ts`, versioned), so `LlmPort.evaluateTrigger` takes `{ triggerId, promptVersion, prompt }`. The adapter's job is transport + parsing the JSON verdict; the use case still validates the verdict before acting. The payload is fenced as untrusted data and substitution is single-pass.
 - _Phase 2 (done)_: An LLM error or invalid verdict sends the Trigger EVALUATING → PENDING (new transition) for retry. There is no retry limit yet; add one with Phase 4's escalation if needed.
 - _Phase 2 (done)_: `Trigger.decision` records `{ stage, reason, priority }`. Dispatch orders ACCEPTED Triggers high → normal → low, then oldest first. `TriggerPriority` moved to `value-objects/`.
+- _Phase 3 (done)_: The roadmap's flow (subscribe after opening a PR, keep the subscription until the WorkItem is terminal) needs the WorkItem to stay open after the PR exists. Added WorkItem `AWAITING` and Session `WAITING`; `WorkResult.status` is `DONE` (default) or `AWAITING_FEEDBACK`, and `WorkResult.artifacts` lists threads to subscribe to. Lifecycle: PENDING → RUNNING → (AWAITING ↔ RUNNING)* → COMPLETED | FAILED.
+- _Phase 3 (done)_: Threads are keyed `ThreadKey = <sourceId>::<threadId>`. First Worker to subscribe keeps a thread. The Worker subscribes to the originating thread on start and to artifacts on AWAITING_FEEDBACK; all its subscriptions are removed on COMPLETED or FAILED.
+- _Phase 3 (done)_: `routeEvent` returns DIRECT / ROUTER / IGNORED. IGNORED = authored by one of `selfAuthorIds`, which prevents the agent's own replies looping back to it. The caller delivers DIRECT events with `WorkerExecutionUseCase.deliverFollowUp`.
+- _Phase 3 (done)_: Follow-ups go to a per-session inbox in `SessionStorePort` (`enqueueFollowUp` dedupes by event id; `drainFollowUps`; `countFollowUps`), separate from the Session record. WorkItem status changes use `compareAndSetWorkItem`; whoever moves AWAITING → RUNNING runs the Worker, others get QUEUED. The Worker re-checks the inbox after going AWAITING. Events that reach a finished WorkItem come back as `STALE` / `orphanedFollowUps`: the caller must re-route them (they go to the Router).
+- _Phase 4 must handle_: an AWAITING WorkItem can wait forever (no timeout or ABANDONED path yet), and WAITING sessions are deliberately not in `listActive`, so the Watchdog ignores them.
+- _Phase 5 must handle_: DIRECT events bypass the Router's filters (by design, so CI bots reach the Worker). Authorization must also gate DIRECT deliveries, or anyone who can comment on the PR can instruct the Worker.
 - _Phase 4_: The Watchdog needs `lastHeartbeatAt` and `restartCount` on `Session`; both were added in Phase 0. "Kill the session process" means simulating a stalled session, since Workers are not OS processes. The "panel store" used for escalation comes before `PanelPort` (Phase 5), so add a minimal `AttentionSinkPort` in Phase 4.
 - _Not covered by any phase_: real `LlmPort` (Claude API) and `SourcePort` (e.g. GitHub) adapters. Add them as a Phase 6 once Phase 5 is done.
 - The two reference projects named below have not been checked; treat them as unconfirmed.
