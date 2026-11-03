@@ -23,6 +23,7 @@ import {
 	FakeSubscriptionStore,
 	FixedClock,
 	makeEvent,
+	roomyContext,
 	SequentialIds,
 } from "./fakes";
 
@@ -260,6 +261,7 @@ describe("Phase 1 + 2 together", () => {
 			clock,
 		}).execute(RouterState.empty());
 		const worker = new WorkerExecutionUseCase({
+			context: roomyContext(),
 			store,
 			llm,
 			sources: new Map<SourceId, SourcePort>([[source.sourceId, source]]),

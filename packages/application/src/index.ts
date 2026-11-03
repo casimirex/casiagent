@@ -7,6 +7,13 @@ export {
 } from "./prompts/evaluateTrigger";
 export { buildWorkerContext, eventMessage, resultMessage } from "./services/buildWorkerContext";
 export {
+	approximateTokens,
+	ContextManager,
+	type ContextManagerDeps,
+	type TokenEstimator,
+	type WorkingContext,
+} from "./services/ContextManager";
+export {
 	type SubscriptionOwner,
 	SubscriptionRegistry,
 	type SubscriptionRegistryDeps,
@@ -35,6 +42,7 @@ export {
 export {
 	type DeliveryStatus,
 	type FollowUpOutcome,
+	type HeartbeatConfig,
 	type WorkerAssignment,
 	type WorkerExecutionDeps,
 	WorkerExecutionUseCase,

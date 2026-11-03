@@ -27,6 +27,7 @@ import {
 	FakeSubscriptionStore,
 	FixedClock,
 	makeEvent,
+	roomyContext,
 	SequentialIds,
 } from "./fakes";
 
@@ -92,6 +93,7 @@ async function setup() {
 		selfAuthorIds: new Set(["superagent-bot"]),
 	});
 	const worker = new WorkerExecutionUseCase({
+		context: roomyContext(),
 		store,
 		llm,
 		sources: new Map<SourceId, SourcePort>([[source.sourceId, source]]),

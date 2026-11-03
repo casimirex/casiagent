@@ -22,6 +22,7 @@ import {
 	FakeSubscriptionStore,
 	FixedClock,
 	makeEvent,
+	roomyContext,
 	SequentialIds,
 } from "./fakes";
 
@@ -45,7 +46,14 @@ async function setup(bodies: readonly string[] = ["fix the flaky test"]) {
 	const sources = new Map<SourceId, SourcePort>([[source.sourceId, source]]);
 	const subscriptionStore = new FakeSubscriptionStore();
 	const subscriptions = new SubscriptionRegistry({ store: subscriptionStore, clock });
-	const worker = new WorkerExecutionUseCase({ store, llm, sources, subscriptions, clock });
+	const worker = new WorkerExecutionUseCase({
+		context: roomyContext(),
+		store,
+		llm,
+		sources,
+		subscriptions,
+		clock,
+	});
 	return {
 		store,
 		clock,
@@ -133,6 +141,7 @@ describe("WorkerExecutionUseCase", () => {
 	test("reports undelivered when no source is registered for the trigger", async () => {
 		const { store, llm, clock, subscriptions, dispatched } = await setup();
 		const worker = new WorkerExecutionUseCase({
+			context: roomyContext(),
 			store,
 			llm,
 			sources: new Map(),

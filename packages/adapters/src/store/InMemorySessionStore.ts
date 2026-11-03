@@ -5,7 +5,7 @@ import {
 	type SessionStorePort,
 	type SourceEvent,
 	type Trigger,
-	type TriggerStatus,
+	TriggerStatus,
 	type WorkItem,
 	type WorkItemStatus,
 } from "@superagent/domain";
@@ -31,7 +31,32 @@ export class InMemorySessionStore implements SessionStorePort {
 	readonly #seenFollowUps = new Map<string, Set<string>>();
 
 	async save(session: Session): Promise<void> {
+		const stored = this.#sessions.get(session.id);
+		const next =
+			stored === undefined
+				? session
+				: {
+						...session,
+						lastHeartbeatAt: Math.max(stored.lastHeartbeatAt, session.lastHeartbeatAt),
+						restartCount: Math.max(stored.restartCount, session.restartCount),
+					};
+		this.#sessions.set(session.id, structuredClone(next));
+	}
+
+	async recordHeartbeat(id: SessionId, at: number): Promise<boolean> {
+		const stored = this.#sessions.get(id);
+		if (stored === undefined) return false;
+		this.#sessions.set(id, { ...stored, lastHeartbeatAt: Math.max(stored.lastHeartbeatAt, at) });
+		return true;
+	}
+
+	async claimTriggerForWork(consumed: Trigger, item: WorkItem, session: Session): Promise<boolean> {
+		const current = this.#triggers.get(consumed.id);
+		if (current === undefined || current.status !== TriggerStatus.ACCEPTED) return false;
+		this.#triggers.set(consumed.id, structuredClone(consumed));
+		this.#workItems.set(item.id, structuredClone(item));
 		this.#sessions.set(session.id, structuredClone(session));
+		return true;
 	}
 
 	async load(id: SessionId): Promise<Session | undefined> {

@@ -1,4 +1,5 @@
 export { DomainError } from "./DomainError";
+export type { AttentionItem } from "./entities/AttentionItem";
 export {
 	type ContextMessage,
 	SESSION_TRANSITIONS,
@@ -23,7 +24,9 @@ export {
 	type WorkItem,
 	type WorkResult,
 } from "./entities/WorkItem";
+export type { AttentionSinkPort } from "./ports/AttentionSinkPort";
 export type { ClockPort } from "./ports/ClockPort";
+export type { ContextSpillPort, SpilledMessage } from "./ports/ContextSpillPort";
 export type { IdGeneratorPort } from "./ports/IdGeneratorPort";
 export type {
 	LlmPort,
@@ -31,6 +34,7 @@ export type {
 	TriggerEvaluationRequest,
 	TriggerVerdict,
 } from "./ports/LlmPort";
+export type { CancelSchedule, SchedulerPort } from "./ports/SchedulerPort";
 export type { SessionStorePort } from "./ports/SessionStorePort";
 export type {
 	OutboundMessage,
@@ -51,6 +55,11 @@ export {
 	fastFilter,
 	payloadText,
 } from "./services/fastFilter";
+export {
+	assessSessionHealth,
+	type HealthVerdict,
+	type WatchdogPolicy,
+} from "./services/sessionHealth";
 export { type DispatchRecord, RouterState } from "./value-objects/RouterState";
 export { SessionId } from "./value-objects/SessionId";
 export { SourceId } from "./value-objects/SourceId";

@@ -32,12 +32,9 @@ export interface DispatchOutcome {
  * Turns every ACCEPTED Trigger (highest priority first) into a WorkItem with its own Worker and session.
  *
  * "Spawning" a Worker means persisting an ACTIVE session with an isolated context;
- * the caller decides how to run it. Each Trigger is claimed atomically
- * (ACCEPTED -> CONSUMED) before any work is created, so concurrent dispatches never
- * start two Workers for the same Trigger.
- *
- * Known gap: a crash between the claim and saving the session leaves a CONSUMED
- * Trigger with no WorkItem. Phase 4 recovery should reconcile these.
+ * the caller decides how to run it. Claiming the Trigger (ACCEPTED -> CONSUMED) and
+ * creating its WorkItem and session is one atomic store operation, so concurrent
+ * dispatches never start two Workers for one Trigger, and a crash cannot strand it.
  */
 export class DispatchWorkUseCase {
 	readonly #store: SessionStorePort;
@@ -60,12 +57,7 @@ export class DispatchWorkUseCase {
 		for (const candidate of accepted) {
 			if (state.isDispatched(candidate.id)) continue;
 
-			const trigger = await this.#store.compareAndSetTrigger(
-				TriggerStatus.ACCEPTED,
-				transitionTrigger(candidate, TriggerStatus.CONSUMED),
-			);
-			if (trigger === undefined) continue; // another dispatcher claimed it first
-
+			const trigger = transitionTrigger(candidate, TriggerStatus.CONSUMED);
 			const workerId = this.#ids.next();
 			const workItem: WorkItem = {
 				id: this.#ids.next(),
@@ -86,8 +78,8 @@ export class DispatchWorkUseCase {
 				restartCount: 0,
 			};
 
-			await this.#store.saveWorkItem(workItem);
-			await this.#store.save(session);
+			// Claim + create in one atomic step: the loser of a race, or a crash, leaves nothing behind.
+			if (!(await this.#store.claimTriggerForWork(trigger, workItem, session))) continue;
 			dispatched.push({
 				triggerId: trigger.id,
 				workItemId: workItem.id,

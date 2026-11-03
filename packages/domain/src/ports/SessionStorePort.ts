@@ -12,8 +12,14 @@ import type { SourceEvent } from "./SourcePort";
  * method or returned from a load method must never be shared with another caller.
  */
 export interface SessionStorePort {
-	/** Insert or replace the full session state. */
+	/**
+	 * Insert or replace the full session state, except that `lastHeartbeatAt` and
+	 * `restartCount` never move backwards: a save carrying older values keeps the stored
+	 * ones. Both are owned by the Watchdog, and a Worker's stale copy must not reset them.
+	 */
 	save(session: Session): Promise<void>;
+	/** Atomically set only `lastHeartbeatAt` (never backwards). Returns false if the session does not exist. */
+	recordHeartbeat(id: SessionId, at: number): Promise<boolean>;
 	load(id: SessionId): Promise<Session | undefined>;
 	/** Sessions that should be running: ACTIVE or STALLED (not WAITING, not terminal). */
 	listActive(): Promise<readonly Session[]>;
@@ -30,6 +36,14 @@ export interface SessionStorePort {
 	 * which is how concurrent callers claim a Trigger without double-processing it.
 	 */
 	compareAndSetTrigger(expectedStatus: TriggerStatus, next: Trigger): Promise<Trigger | undefined>;
+
+	/**
+	 * Dispatch atomically: replace the Trigger with `consumed` if it is still ACCEPTED, and
+	 * insert the WorkItem and Session, all or nothing. Returns false (and changes nothing)
+	 * if the Trigger is no longer ACCEPTED. A crash can never leave a consumed Trigger
+	 * without its work.
+	 */
+	claimTriggerForWork(consumed: Trigger, item: WorkItem, session: Session): Promise<boolean>;
 
 	/** Insert or replace a WorkItem. Use for creation; use compareAndSetWorkItem for status changes. */
 	saveWorkItem(item: WorkItem): Promise<void>;

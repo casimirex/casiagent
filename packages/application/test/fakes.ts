@@ -1,5 +1,8 @@
+import { ContextManager } from "@superagent/application";
 import {
 	type ClockPort,
+	type ContextMessage,
+	type ContextSpillPort,
 	type IdGeneratorPort,
 	type LlmPort,
 	type OutboundMessage,
@@ -10,6 +13,7 @@ import {
 	type SourceEvent,
 	SourceId,
 	type SourcePort,
+	type SpilledMessage,
 	type Subscription,
 	type SubscriptionStorePort,
 	type TaskExecutionRequest,
@@ -34,7 +38,34 @@ export class FakeSessionStore implements SessionStorePort {
 
 	async save(session: Session) {
 		await tick();
+		const stored = this.sessions.get(session.id);
+		const next =
+			stored === undefined
+				? session
+				: {
+						...session,
+						lastHeartbeatAt: Math.max(stored.lastHeartbeatAt, session.lastHeartbeatAt),
+						restartCount: Math.max(stored.restartCount, session.restartCount),
+					};
+		this.sessions.set(session.id, structuredClone(next));
+	}
+	readonly heartbeats: Array<{ id: string; at: number }> = [];
+	async recordHeartbeat(id: SessionId, at: number) {
+		await tick();
+		const s = this.sessions.get(id);
+		if (s === undefined) return false;
+		this.heartbeats.push({ id, at });
+		this.sessions.set(id, { ...s, lastHeartbeatAt: Math.max(s.lastHeartbeatAt, at) });
+		return true;
+	}
+	async claimTriggerForWork(consumed: Trigger, item: WorkItem, session: Session) {
+		await tick();
+		const t = this.triggers.get(consumed.id);
+		if (t === undefined || t.status !== "ACCEPTED") return false;
+		this.triggers.set(consumed.id, structuredClone(consumed));
+		this.workItems.set(item.id, structuredClone(item));
 		this.sessions.set(session.id, structuredClone(session));
+		return true;
 	}
 	async load(id: SessionId) {
 		await tick();
@@ -215,4 +246,32 @@ export class FakeSubscriptionStore implements SubscriptionStorePort {
 		}
 		return n;
 	}
+}
+
+/** Spill log with naive substring recall; enough to exercise ContextManager. */
+export class FakeSpill implements ContextSpillPort {
+	readonly logs = new Map<string, SpilledMessage[]>();
+	async spill(sessionId: SessionId, messages: readonly ContextMessage[]) {
+		const log = this.logs.get(sessionId) ?? [];
+		for (const message of messages) log.push({ seq: log.length, message });
+		this.logs.set(sessionId, log);
+		return log.length;
+	}
+	async recall(sessionId: SessionId, query: string, limit: number) {
+		const words = query
+			.toLowerCase()
+			.split(/\W+/)
+			.filter((w) => w.length >= 4);
+		return (this.logs.get(sessionId) ?? [])
+			.filter((s) => words.some((w) => s.message.content.toLowerCase().includes(w)))
+			.slice(-limit);
+	}
+	async count(sessionId: SessionId) {
+		return this.logs.get(sessionId)?.length ?? 0;
+	}
+}
+
+/** A ContextManager with a budget large enough that existing tests never spill. */
+export function roomyContext(spill: ContextSpillPort = new FakeSpill()): ContextManager {
+	return new ContextManager({ spill, budgetTokens: 1_000_000 });
 }

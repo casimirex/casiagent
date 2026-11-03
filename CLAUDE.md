@@ -6,7 +6,7 @@ This roadmap describes how to build a SuperAgent-like system from scratch using 
 
 ## Working Notes (keep current)
 
-**Progress**: Phases 0–3 — done. Next: Phase 4.
+**Progress**: Phases 0–4 — done. Next: Phase 5.
 
 **Commands**: `bun run check` = type-check + lint + architecture check + tests. Must pass before a phase is considered done.
 
@@ -24,7 +24,7 @@ This roadmap describes how to build a SuperAgent-like system from scratch using 
 - _Phase 1 (done)_: `SourcePort.reply(OutboundMessage)` added. `Trigger` gained `threadId?`, `authorId`, `authorIsBot` (copied from `SourceEvent`; Phase 2/3 need them). Trigger ids are `${sourceId}#${eventId}`, so intake is idempotent.
 - _Phase 1 (done)_: Domain ports `IdGeneratorPort` and `ClockPort` added; adapters `UuidGenerator`, `SystemClock`, `InMemorySessionStore`.
 - _Phase 1 (done)_: The Worker persists its result before replying; a failed reply is reported as `delivery: { delivered: false }`, never re-runs the task. A RUNNING WorkItem is resumed rather than rejected (for the Phase 4 Watchdog).
-- _Phase 4 must handle_: a crash between Dispatch claiming a Trigger (→ CONSUMED) and saving its session leaves a CONSUMED Trigger with no WorkItem. Recovery should reconcile these.
+- _Phase 4 (done)_: The Phase 1 dispatch crash gap is closed at the source: `SessionStorePort.claimTriggerForWork(consumed, item, session)` claims the Trigger and creates the WorkItem and session atomically.
 - _Phase 2 (done)_: Queue depth = ACCEPTED Triggers + PENDING/RUNNING WorkItems (`countWorkItemsByStatus` added to the store).
 - _Phase 2 (done)_: `FilterRules` allow-lists are an explicit list or `"any"`; an empty list allows nothing. Config is compiled once by `createFilterRules` (bad regex fails at startup; patterns are case-insensitive, never `g`/`y`). Keywords match string values in the payload, up to 5 levels deep.
 - _Phase 2 (done)_: The application renders the prompt (`application/src/prompts/evaluateTrigger.ts`, versioned), so `LlmPort.evaluateTrigger` takes `{ triggerId, promptVersion, prompt }`. The adapter's job is transport + parsing the JSON verdict; the use case still validates the verdict before acting. The payload is fenced as untrusted data and substitution is single-pass.
@@ -34,9 +34,14 @@ This roadmap describes how to build a SuperAgent-like system from scratch using 
 - _Phase 3 (done)_: Threads are keyed `ThreadKey = <sourceId>::<threadId>`. First Worker to subscribe keeps a thread. The Worker subscribes to the originating thread on start and to artifacts on AWAITING_FEEDBACK; all its subscriptions are removed on COMPLETED or FAILED.
 - _Phase 3 (done)_: `routeEvent` returns DIRECT / ROUTER / IGNORED. IGNORED = authored by one of `selfAuthorIds`, which prevents the agent's own replies looping back to it. The caller delivers DIRECT events with `WorkerExecutionUseCase.deliverFollowUp`.
 - _Phase 3 (done)_: Follow-ups go to a per-session inbox in `SessionStorePort` (`enqueueFollowUp` dedupes by event id; `drainFollowUps`; `countFollowUps`), separate from the Session record. WorkItem status changes use `compareAndSetWorkItem`; whoever moves AWAITING → RUNNING runs the Worker, others get QUEUED. The Worker re-checks the inbox after going AWAITING. Events that reach a finished WorkItem come back as `STALE` / `orphanedFollowUps`: the caller must re-route them (they go to the Router).
-- _Phase 4 must handle_: an AWAITING WorkItem can wait forever (no timeout or ABANDONED path yet), and WAITING sessions are deliberately not in `listActive`, so the Watchdog ignores them.
+- _Still open_: an AWAITING WorkItem can wait forever (no timeout or ABANDONED path yet). WAITING sessions are deliberately not in `listActive`, so the Watchdog ignores them. A hung LLM call keeps heartbeating, so it is never "stalled"; add an LLM-call timeout in the adapter (Phase 6).
 - _Phase 5 must handle_: DIRECT events bypass the Router's filters (by design, so CI bots reach the Worker). Authorization must also gate DIRECT deliveries, or anyone who can comment on the PR can instruct the Worker.
-- _Phase 4_: The Watchdog needs `lastHeartbeatAt` and `restartCount` on `Session`; both were added in Phase 0. "Kill the session process" means simulating a stalled session, since Workers are not OS processes. The "panel store" used for escalation comes before `PanelPort` (Phase 5), so add a minimal `AttentionSinkPort` in Phase 4.
+- _Phase 4 (done)_: SQLite adapters (`openDatabase` + `PRAGMA user_version` migrations; never edit an applied migration) for sessions, triggers, work items, the follow-up inbox, subscriptions and context spill. Session context lives on `sessions.context_json` (the roadmap put it on `work_items`; our Session entity owns it). Every store is checked by a shared contract suite in `packages/adapters/test/contracts/`; a new store implementation must run it.
+- _Phase 4 (done)_: `save` never moves `lastHeartbeatAt`/`restartCount` backwards, and `recordHeartbeat` updates only that field, so heartbeats and a Worker's saves never clobber each other and a stale copy cannot reset the restart count.
+- _Phase 4 (done)_: `ContextManager` (budget, default 25% reserved for recall): the first message (the task) is never spilled; a pointer message `[context-spill] N earlier message(s)…` replaces spilled ones; an oversized newest message is truncated inline and spilled in full; before each run, spilled messages matching the latest user message are recalled into the working context (not persisted). Tokens are estimated at ~4 chars/token (`approximateTokens`, injectable).
+- _Phase 4 (done)_: `IntervalWatchdog` (adapter) uses the pure domain `assessSessionHealth`. Stalled = no heartbeat for > 3 × interval; restart up to 3 times (STALLED, `restartCount+1`, grace period); then escalate: session FAILED, WorkItem FAILED (or ABANDONED if never started), subscriptions removed, `AttentionItem` raised via `AttentionSinkPort` (id `watchdog:<sessionId>`, idempotent). The composition root wires `onRestart` to `WorkerExecutionUseCase.execute`.
+- _Phase 4 (done)_: Workers heartbeat during LLM calls via `SchedulerPort` (optional `heartbeat` dep). A restarted run and a slow original can overlap; the WorkItem compare-and-set lets exactly one result be saved, and the other run fails before replying.
+- _Phase 5 must handle_: escalations are in `InMemoryAttentionStore`; the panel needs a persistent (SQLite) attention store.
 - _Not covered by any phase_: real `LlmPort` (Claude API) and `SourcePort` (e.g. GitHub) adapters. Add them as a Phase 6 once Phase 5 is done.
 - The two reference projects named below have not been checked; treat them as unconfirmed.
 

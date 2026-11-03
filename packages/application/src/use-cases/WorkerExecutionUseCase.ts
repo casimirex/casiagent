@@ -3,6 +3,7 @@ import {
 	isTerminalWorkItem,
 	type LlmPort,
 	type OutboundMessage,
+	type SchedulerPort,
 	type Session,
 	type SessionId,
 	SessionStatus,
@@ -13,12 +14,14 @@ import {
 	type Subscription,
 	transitionSession,
 	transitionWorkItem,
+	type WatchdogPort,
 	type WorkItem,
 	WorkItemStatus,
 	type WorkResult,
 } from "@superagent/domain";
 import { UseCaseError } from "../errors";
 import { eventMessage, resultMessage } from "../services/buildWorkerContext";
+import type { ContextManager } from "../services/ContextManager";
 import type { SubscriptionRegistry } from "../services/SubscriptionRegistry";
 
 export interface WorkerExecutionDeps {
@@ -27,7 +30,18 @@ export interface WorkerExecutionDeps {
 	/** Where to write results back, by source. */
 	readonly sources: ReadonlyMap<SourceId, SourcePort>;
 	readonly subscriptions: SubscriptionRegistry;
+	/** Keeps the working context within the token budget (spill + recall). */
+	readonly context: ContextManager;
 	readonly clock: ClockPort;
+	/** Heartbeats while the LLM runs, so long calls are not mistaken for stalls. */
+	readonly heartbeat?: HeartbeatConfig;
+}
+
+export interface HeartbeatConfig {
+	readonly watchdog: WatchdogPort;
+	readonly scheduler: SchedulerPort;
+	/** Must be well under the Watchdog's stall threshold. */
+	readonly intervalMs: number;
 }
 
 export interface WorkerAssignment {
@@ -101,14 +115,18 @@ export class WorkerExecutionUseCase {
 	readonly #llm: LlmPort;
 	readonly #sources: ReadonlyMap<SourceId, SourcePort>;
 	readonly #subscriptions: SubscriptionRegistry;
+	readonly #context: ContextManager;
 	readonly #clock: ClockPort;
+	readonly #heartbeat: HeartbeatConfig | undefined;
 
 	constructor(deps: WorkerExecutionDeps) {
 		this.#store = deps.store;
 		this.#llm = deps.llm;
 		this.#sources = deps.sources;
 		this.#subscriptions = deps.subscriptions;
+		this.#context = deps.context;
 		this.#clock = deps.clock;
+		this.#heartbeat = deps.heartbeat;
 	}
 
 	/**
@@ -203,20 +221,26 @@ export class WorkerExecutionUseCase {
 			const followUps = await this.#store.drainFollowUps(current.id);
 			const last = followUps.at(-1);
 			if (last !== undefined) replyTo = targetOf(last);
-			current = {
+			const now = this.#clock.now();
+			const working = await this.#context.getWorkingContext({
 				...(current.status === SessionStatus.ACTIVE
 					? current
-					: transitionSession(current, SessionStatus.ACTIVE, this.#clock.now())),
+					: transitionSession(current, SessionStatus.ACTIVE, now)),
 				context: { messages: [...current.context.messages, ...followUps.map(eventMessage)] },
-				updatedAt: this.#clock.now(),
-			};
+				updatedAt: now,
+				lastHeartbeatAt: now,
+			});
+			current = working.session;
 			await this.#store.save(current);
 
 			let result: WorkResult;
+			const stopHeartbeat = this.#startHeartbeat(current.id);
 			try {
-				result = await this.#llm.executeTask({ workItem: running, context: current.context });
+				result = await this.#llm.executeTask({ workItem: running, context: working.context });
 			} catch (error) {
 				return this.#fail(running, current, messageOf(error));
+			} finally {
+				stopHeartbeat();
 			}
 
 			current = {
@@ -259,6 +283,14 @@ export class WorkerExecutionUseCase {
 			const orphanedFollowUps = await this.#release(current);
 			return { status: "COMPLETED", workItem: completed, delivery, orphanedFollowUps };
 		}
+	}
+
+	#startHeartbeat(sessionId: SessionId): () => void {
+		const hb = this.#heartbeat;
+		if (hb === undefined) return () => {};
+		// A failed heartbeat must never fail the task; the Watchdog will notice if they stop.
+		const beat = () => void hb.watchdog.heartbeat(sessionId).catch(() => {});
+		return hb.scheduler.every(hb.intervalMs, beat);
 	}
 
 	async #fail(running: WorkItem, session: Session, error: string): Promise<WorkerOutcome> {
