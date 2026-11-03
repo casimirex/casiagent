@@ -1,10 +1,16 @@
-import { ContextManager } from "@superagent/application";
+import { ContextManager, type PanelPort } from "@superagent/application";
 import {
+	type Action,
+	type AttentionItem,
+	type AuthorizationPort,
+	type AuthorizationVerdict,
 	type ClockPort,
 	type ContextMessage,
 	type ContextSpillPort,
 	type IdGeneratorPort,
 	type LlmPort,
+	type Observation,
+	type ObserveLogPort,
 	type OutboundMessage,
 	type Session,
 	type SessionId,
@@ -212,6 +218,7 @@ export function makeEvent(overrides: Partial<SourceEvent> = {}): SourceEvent {
 		threadId: "pr-42",
 		authorId: "alice",
 		authorIsBot: false,
+		explicitRequest: true,
 		payload: { body: "please fix the flaky test" },
 		timestamp: 500,
 		...overrides,
@@ -274,4 +281,34 @@ export class FakeSpill implements ContextSpillPort {
 /** A ContextManager with a budget large enough that existing tests never spill. */
 export function roomyContext(spill: ContextSpillPort = new FakeSpill()): ContextManager {
 	return new ContextManager({ spill, budgetTokens: 1_000_000 });
+}
+
+/** Authorization with a fixed answer, or a custom function. Allows everything by default. */
+export class FakeAuthorization implements AuthorizationPort {
+	readonly calls: Array<{ userId: string; sourceId: string; action: Action }> = [];
+	decide: (userId: string, sourceId: string, action: Action) => AuthorizationVerdict = () => ({
+		decision: "ALLOW",
+		reason: "test: allow all",
+	});
+	canAct(userId: string, sourceId: SourceId, action: Action) {
+		this.calls.push({ userId, sourceId, action });
+		return this.decide(userId, sourceId, action);
+	}
+}
+
+export class FakeObserveLog implements ObserveLogPort {
+	readonly entries = new Map<string, Observation>();
+	async record(o: Observation) {
+		this.entries.set(o.id, o);
+	}
+	async list(limit: number) {
+		return [...this.entries.values()].reverse().slice(0, limit);
+	}
+}
+
+export class FakePanel implements PanelPort {
+	readonly items: AttentionItem[] = [];
+	async showAttentionItem(item: AttentionItem) {
+		this.items.push(item);
+	}
 }

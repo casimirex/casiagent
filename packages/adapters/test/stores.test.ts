@@ -3,15 +3,21 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+	InMemoryAttentionStore,
 	InMemoryContextSpillStore,
+	InMemoryObserveLog,
 	InMemorySessionStore,
 	InMemorySubscriptionStore,
 	openDatabase,
+	SCHEMA_VERSION,
+	SqliteAttentionStore,
 	SqliteContextSpillStore,
+	SqliteObserveLog,
 	SqliteSessionStore,
 	SqliteSubscriptionStore,
 } from "@superagent/adapters";
 import { SessionId, TriggerStatus } from "@superagent/domain";
+import { attentionStoreContract, observeLogContract } from "./contracts/attention.contract";
 import { session, subscription, trigger, workItem } from "./contracts/fixtures";
 import { sessionStoreContract } from "./contracts/sessionStore.contract";
 import { spillStoreContract } from "./contracts/spillStore.contract";
@@ -61,7 +67,7 @@ describe("SQLite on disk", () => {
 		openDatabase(path).close();
 		const db = openDatabase(path);
 		expect((db.query("PRAGMA user_version").get() as { user_version: number }).user_version).toBe(
-			1,
+			SCHEMA_VERSION,
 		);
 		db.close();
 	});
@@ -79,3 +85,11 @@ describe("SQLite on disk", () => {
 		expect(results.filter(Boolean)).toHaveLength(1);
 	});
 });
+
+attentionStoreContract("InMemoryAttentionStore", () => new InMemoryAttentionStore());
+attentionStoreContract(
+	"SqliteAttentionStore",
+	() => new SqliteAttentionStore(openDatabase(":memory:")),
+);
+observeLogContract("InMemoryObserveLog", () => new InMemoryObserveLog());
+observeLogContract("SqliteObserveLog", () => new SqliteObserveLog(openDatabase(":memory:")));

@@ -1,4 +1,5 @@
 export { UseCaseError } from "./errors";
+export type { PanelPort } from "./ports/PanelPort";
 export {
 	EVALUATE_TRIGGER_PROMPT,
 	EVALUATE_TRIGGER_PROMPT_VERSION,

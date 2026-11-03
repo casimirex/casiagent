@@ -5,7 +5,14 @@ import {
 	SubscriptionRouter,
 } from "@superagent/application";
 import { SessionId, SourceId, TriggerStatus } from "@superagent/domain";
-import { FakeSessionStore, FakeSubscriptionStore, FixedClock, makeEvent } from "./fakes";
+import {
+	FakeAuthorization,
+	FakeObserveLog,
+	FakeSessionStore,
+	FakeSubscriptionStore,
+	FixedClock,
+	makeEvent,
+} from "./fakes";
 
 const REPO = SourceId.of("github:org/repo");
 const owner = (n: number) => ({
@@ -19,6 +26,9 @@ function setup() {
 	const subscriptionStore = new FakeSubscriptionStore();
 	const registry = new SubscriptionRegistry({ store: subscriptionStore, clock: new FixedClock() });
 	const router = new SubscriptionRouter({
+		authorization: new FakeAuthorization(),
+		observeLog: new FakeObserveLog(),
+		clock: new FixedClock(),
 		registry,
 		intake: new IntakeTriggerUseCase({ store }),
 		selfAuthorIds: new Set(["superagent-bot"]),

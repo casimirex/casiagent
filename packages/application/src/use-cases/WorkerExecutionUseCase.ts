@@ -20,6 +20,7 @@ import {
 	type WorkResult,
 } from "@superagent/domain";
 import { UseCaseError } from "../errors";
+import type { PanelPort } from "../ports/PanelPort";
 import { eventMessage, resultMessage } from "../services/buildWorkerContext";
 import type { ContextManager } from "../services/ContextManager";
 import type { SubscriptionRegistry } from "../services/SubscriptionRegistry";
@@ -32,6 +33,8 @@ export interface WorkerExecutionDeps {
 	readonly subscriptions: SubscriptionRegistry;
 	/** Keeps the working context within the token budget (spill + recall). */
 	readonly context: ContextManager;
+	/** Where failures, undelivered results, questions and review requests are surfaced. */
+	readonly panel: PanelPort;
 	readonly clock: ClockPort;
 	/** Heartbeats while the LLM runs, so long calls are not mistaken for stalls. */
 	readonly heartbeat?: HeartbeatConfig;
@@ -116,6 +119,7 @@ export class WorkerExecutionUseCase {
 	readonly #sources: ReadonlyMap<SourceId, SourcePort>;
 	readonly #subscriptions: SubscriptionRegistry;
 	readonly #context: ContextManager;
+	readonly #panel: PanelPort;
 	readonly #clock: ClockPort;
 	readonly #heartbeat: HeartbeatConfig | undefined;
 
@@ -125,6 +129,7 @@ export class WorkerExecutionUseCase {
 		this.#sources = deps.sources;
 		this.#subscriptions = deps.subscriptions;
 		this.#context = deps.context;
+		this.#panel = deps.panel;
 		this.#clock = deps.clock;
 		this.#heartbeat = deps.heartbeat;
 	}
@@ -259,7 +264,7 @@ export class WorkerExecutionUseCase {
 				const awaiting = await this.#transition(running, WorkItemStatus.AWAITING, result);
 				current = transitionSession(current, SessionStatus.WAITING, this.#clock.now());
 				await this.#store.save(current);
-				const delivery = await this.#reply(replyTo, result);
+				const delivery = await this.#replyAndSurface(current, replyTo, result);
 
 				// An event may have been queued while we ran; it could not claim the WorkItem.
 				if ((await this.#store.countFollowUps(current.id)) > 0) {
@@ -279,7 +284,7 @@ export class WorkerExecutionUseCase {
 			await this.#store.save(
 				transitionSession(current, SessionStatus.COMPLETED, this.#clock.now()),
 			);
-			const delivery = await this.#reply(replyTo, result);
+			const delivery = await this.#replyAndSurface(current, replyTo, result);
 			const orphanedFollowUps = await this.#release(current);
 			return { status: "COMPLETED", workItem: completed, delivery, orphanedFollowUps };
 		}
@@ -297,6 +302,14 @@ export class WorkerExecutionUseCase {
 		const failed = await this.#transition(running, WorkItemStatus.FAILED);
 		await this.#store.save(transitionSession(session, SessionStatus.FAILED, this.#clock.now()));
 		const orphanedFollowUps = await this.#release(session);
+		await this.#panel.showAttentionItem({
+			id: `worker-failed:${failed.id}`,
+			kind: "WORKER_FAILED",
+			message: `Task ${failed.id} failed: ${error}`,
+			sessionId: session.id,
+			workItemId: failed.id,
+			createdAt: this.#clock.now(),
+		});
 		return { status: "FAILED", workItem: failed, error, orphanedFollowUps };
 	}
 
@@ -316,6 +329,42 @@ export class WorkerExecutionUseCase {
 	async #release(session: Session): Promise<readonly SourceEvent[]> {
 		await this.#subscriptions.unsubscribeWorker(session.workerId);
 		return this.#store.drainFollowUps(session.id);
+	}
+
+	/**
+	 * Reply, then tell a human about anything they must act on: a reply that could not be
+	 * delivered (nobody has seen the result) and any question or review request.
+	 * Runs after the result is persisted.
+	 */
+	async #replyAndSurface(
+		session: Session,
+		target: ReplyTarget,
+		result: WorkResult,
+	): Promise<DeliveryStatus> {
+		const delivery = await this.#reply(target, result);
+		const now = this.#clock.now();
+		const where = { sessionId: session.id, workItemId: session.workItemId };
+		if (!delivery.delivered) {
+			await this.#panel.showAttentionItem({
+				id: `delivery-failed:${session.workItemId}:${now}`,
+				kind: "DELIVERY_FAILED",
+				message: `Could not post the result of ${session.workItemId} (${delivery.reason}). Result: ${result.output}`,
+				...where,
+				createdAt: now,
+			});
+		}
+		if (result.attention !== undefined) {
+			const { kind, message, url } = result.attention;
+			await this.#panel.showAttentionItem({
+				id: `${kind.toLowerCase()}:${session.workItemId}:${now}`,
+				kind,
+				message,
+				...(url === undefined ? {} : { url }),
+				...where,
+				createdAt: now,
+			});
+		}
+		return delivery;
 	}
 
 	async #reply(target: ReplyTarget, result: WorkResult): Promise<DeliveryStatus> {

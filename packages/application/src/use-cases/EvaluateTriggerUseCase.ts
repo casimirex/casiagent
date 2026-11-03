@@ -1,9 +1,15 @@
 import {
+	ActionOrigin,
+	AuthorizationDecision,
+	type AuthorizationPort,
+	type ClockPort,
 	FilterDecision,
 	type FilterRules,
 	fastFilter,
 	isTriggerPriority,
 	type LlmPort,
+	type ObserveLogPort,
+	payloadText,
 	type SessionStorePort,
 	type Trigger,
 	type TriggerDecision,
@@ -20,6 +26,10 @@ import {
 
 export interface EvaluateTriggerDeps {
 	readonly store: SessionStorePort;
+	/** Checked first, before any filtering. */
+	readonly authorization: AuthorizationPort;
+	readonly observeLog: ObserveLogPort;
+	readonly clock: ClockPort;
 	readonly llm: LlmPort;
 	readonly rules: FilterRules;
 	/** The team's written authorization rules, given to the LLM verbatim. */
@@ -28,7 +38,8 @@ export interface EvaluateTriggerDeps {
 
 export type EvaluationOutcome =
 	| {
-			readonly status: "ACCEPTED" | "REJECTED";
+			/** OBSERVED: authorized for observation only; logged, not acted on. */
+			readonly status: "ACCEPTED" | "REJECTED" | "OBSERVED";
 			readonly trigger: Trigger;
 			readonly decision: TriggerDecision;
 	  }
@@ -66,8 +77,13 @@ function serializeForModel(trigger: Trigger): string {
 	);
 }
 
+const MAX_INTENDED_ACTION_CHARS = 500;
+
 /**
- * Two-stage evaluation of a PENDING Trigger:
+ * Evaluation of a PENDING Trigger:
+ *   0. Authorization (Phase 5): DENY -> REJECTED; OBSERVE_ONLY -> OBSERVED plus an
+ *      observe-log entry saying what would have been done. No WorkItem is ever created
+ *      for these. Proactive (inferred) work is observe-only unless a rule says auto_act.
  *   1. `fastFilter` (domain, synchronous): DISCARD -> REJECTED, PASS -> ACCEPTED.
  *   2. AMBIGUOUS only: claim the Trigger (PENDING -> EVALUATING), ask the LLM, and
  *      record its verdict. On LLM failure the Trigger returns to PENDING for retry.
@@ -77,12 +93,18 @@ function serializeForModel(trigger: Trigger): string {
  */
 export class EvaluateTriggerUseCase {
 	readonly #store: SessionStorePort;
+	readonly #authorization: AuthorizationPort;
+	readonly #observeLog: ObserveLogPort;
+	readonly #clock: ClockPort;
 	readonly #llm: LlmPort;
 	readonly #rules: FilterRules;
 	readonly #authorizationRules: string;
 
 	constructor(deps: EvaluateTriggerDeps) {
 		this.#store = deps.store;
+		this.#authorization = deps.authorization;
+		this.#observeLog = deps.observeLog;
+		this.#clock = deps.clock;
 		this.#llm = deps.llm;
 		this.#rules = deps.rules;
 		this.#authorizationRules = deps.authorizationRules;
@@ -99,16 +121,49 @@ export class EvaluateTriggerUseCase {
 			};
 		}
 
+		const description = payloadText(trigger.payload);
+		const origin = trigger.explicitRequest ? ActionOrigin.EXPLICIT_REQUEST : ActionOrigin.INFERRED;
+		const auth = this.#authorization.canAct(trigger.authorId, trigger.sourceId, {
+			origin,
+			description,
+		});
+		if (auth.decision === AuthorizationDecision.DENY) {
+			return this.#decide(trigger, TriggerStatus.PENDING, TriggerStatus.REJECTED, {
+				stage: "AUTHORIZATION",
+				reason: auth.reason,
+				priority: TriggerPriority.NORMAL,
+			});
+		}
+		if (auth.decision === AuthorizationDecision.OBSERVE_ONLY) {
+			// Log first (idempotent by id) so a crash cannot leave an OBSERVED trigger unlogged.
+			const kind = origin === ActionOrigin.INFERRED ? "inferred" : "explicit";
+			await this.#observeLog.record({
+				id: `observe:${trigger.id}`,
+				triggerId: trigger.id,
+				sourceId: trigger.sourceId,
+				...(trigger.threadId === undefined ? {} : { threadId: trigger.threadId }),
+				authorId: trigger.authorId,
+				intendedAction: `Act on ${kind} request: ${description.slice(0, MAX_INTENDED_ACTION_CHARS)}`,
+				rationale: auth.reason,
+				createdAt: this.#clock.now(),
+			});
+			return this.#decide(trigger, TriggerStatus.PENDING, TriggerStatus.OBSERVED, {
+				stage: "AUTHORIZATION",
+				reason: auth.reason,
+				priority: TriggerPriority.NORMAL,
+			});
+		}
+
 		const filter = fastFilter(trigger, this.#rules);
 		switch (filter.decision) {
 			case FilterDecision.DISCARD:
-				return this.#decide(trigger, TriggerStatus.PENDING, false, {
+				return this.#decide(trigger, TriggerStatus.PENDING, TriggerStatus.REJECTED, {
 					stage: "FAST_FILTER",
 					reason: filter.reason,
 					priority: TriggerPriority.NORMAL,
 				});
 			case FilterDecision.PASS:
-				return this.#decide(trigger, TriggerStatus.PENDING, true, {
+				return this.#decide(trigger, TriggerStatus.PENDING, TriggerStatus.ACCEPTED, {
 					stage: "FAST_FILTER",
 					reason: filter.reason,
 					priority: TriggerPriority.NORMAL,
@@ -150,7 +205,8 @@ export class EvaluateTriggerUseCase {
 			return { status: "ERROR", trigger: reverted ?? evaluating, error: messageOf(error) };
 		}
 
-		return this.#decide(evaluating, TriggerStatus.EVALUATING, verdict.accepted, {
+		const verdictStatus = verdict.accepted ? TriggerStatus.ACCEPTED : TriggerStatus.REJECTED;
+		return this.#decide(evaluating, TriggerStatus.EVALUATING, verdictStatus, {
 			stage: "LLM",
 			reason: verdict.reason,
 			priority: verdict.priority,
@@ -160,10 +216,12 @@ export class EvaluateTriggerUseCase {
 	async #decide(
 		trigger: Trigger,
 		expectedStatus: TriggerStatus,
-		accepted: boolean,
+		status:
+			| typeof TriggerStatus.ACCEPTED
+			| typeof TriggerStatus.REJECTED
+			| typeof TriggerStatus.OBSERVED,
 		decision: TriggerDecision,
 	): Promise<EvaluationOutcome> {
-		const status = accepted ? TriggerStatus.ACCEPTED : TriggerStatus.REJECTED;
 		const stored = await this.#store.compareAndSetTrigger(
 			expectedStatus,
 			transitionTrigger(trigger, status, decision),
@@ -171,7 +229,7 @@ export class EvaluateTriggerUseCase {
 		if (stored === undefined) {
 			return { status: "SKIPPED", reason: `Trigger ${trigger.id} changed concurrently` };
 		}
-		return { status: accepted ? "ACCEPTED" : "REJECTED", trigger: stored, decision };
+		return { status, trigger: stored, decision };
 	}
 
 	/** Work not yet finished: accepted Triggers awaiting dispatch plus open WorkItems. */

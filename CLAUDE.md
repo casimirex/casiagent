@@ -6,9 +6,9 @@ This roadmap describes how to build a SuperAgent-like system from scratch using 
 
 ## Working Notes (keep current)
 
-**Progress**: Phases 0–4 — done. Next: Phase 5.
+**Progress**: Phases 0–5 — done. Next: Phase 6 (real LLM and source adapters, runnable `main`).
 
-**Commands**: `bun run check` = type-check + lint + architecture check + tests. Must pass before a phase is considered done.
+**Commands**: `bun run check` = type-check + lint + architecture check + unawaited-assertion check (`scripts/check-tests.ts`) + tests. Must pass before a phase is considered done.
 
 **Conventions**
 - The repo root is the workspace root (no nested `superagent/` folder).
@@ -35,13 +35,17 @@ This roadmap describes how to build a SuperAgent-like system from scratch using 
 - _Phase 3 (done)_: `routeEvent` returns DIRECT / ROUTER / IGNORED. IGNORED = authored by one of `selfAuthorIds`, which prevents the agent's own replies looping back to it. The caller delivers DIRECT events with `WorkerExecutionUseCase.deliverFollowUp`.
 - _Phase 3 (done)_: Follow-ups go to a per-session inbox in `SessionStorePort` (`enqueueFollowUp` dedupes by event id; `drainFollowUps`; `countFollowUps`), separate from the Session record. WorkItem status changes use `compareAndSetWorkItem`; whoever moves AWAITING → RUNNING runs the Worker, others get QUEUED. The Worker re-checks the inbox after going AWAITING. Events that reach a finished WorkItem come back as `STALE` / `orphanedFollowUps`: the caller must re-route them (they go to the Router).
 - _Still open_: an AWAITING WorkItem can wait forever (no timeout or ABANDONED path yet). WAITING sessions are deliberately not in `listActive`, so the Watchdog ignores them. A hung LLM call keeps heartbeating, so it is never "stalled"; add an LLM-call timeout in the adapter (Phase 6).
-- _Phase 5 must handle_: DIRECT events bypass the Router's filters (by design, so CI bots reach the Worker). Authorization must also gate DIRECT deliveries, or anyone who can comment on the PR can instruct the Worker.
+- _Phase 5 (done)_: DIRECT follow-ups are authorized as `FOLLOW_UP` actions in `SubscriptionRouter` (DENY → IGNORED, OBSERVE_ONLY → OBSERVED + observe log). Only `allowed_users` and `trusted_followup_authors` can reach a Worker.
 - _Phase 4 (done)_: SQLite adapters (`openDatabase` + `PRAGMA user_version` migrations; never edit an applied migration) for sessions, triggers, work items, the follow-up inbox, subscriptions and context spill. Session context lives on `sessions.context_json` (the roadmap put it on `work_items`; our Session entity owns it). Every store is checked by a shared contract suite in `packages/adapters/test/contracts/`; a new store implementation must run it.
 - _Phase 4 (done)_: `save` never moves `lastHeartbeatAt`/`restartCount` backwards, and `recordHeartbeat` updates only that field, so heartbeats and a Worker's saves never clobber each other and a stale copy cannot reset the restart count.
 - _Phase 4 (done)_: `ContextManager` (budget, default 25% reserved for recall): the first message (the task) is never spilled; a pointer message `[context-spill] N earlier message(s)…` replaces spilled ones; an oversized newest message is truncated inline and spilled in full; before each run, spilled messages matching the latest user message are recalled into the working context (not persisted). Tokens are estimated at ~4 chars/token (`approximateTokens`, injectable).
 - _Phase 4 (done)_: `IntervalWatchdog` (adapter) uses the pure domain `assessSessionHealth`. Stalled = no heartbeat for > 3 × interval; restart up to 3 times (STALLED, `restartCount+1`, grace period); then escalate: session FAILED, WorkItem FAILED (or ABANDONED if never started), subscriptions removed, `AttentionItem` raised via `AttentionSinkPort` (id `watchdog:<sessionId>`, idempotent). The composition root wires `onRestart` to `WorkerExecutionUseCase.execute`.
 - _Phase 4 (done)_: Workers heartbeat during LLM calls via `SchedulerPort` (optional `heartbeat` dep). A restarted run and a slow original can overlap; the WorkItem compare-and-set lets exactly one result be saved, and the other run fails before replying.
-- _Phase 5 must handle_: escalations are in `InMemoryAttentionStore`; the panel needs a persistent (SQLite) attention store.
+- _Phase 5 (done)_: `SourceEvent`/`Trigger` gained `explicitRequest` (mention/DM/assignment; set by the source adapter). Authorization runs first in `EvaluateTriggerUseCase`: DENY → REJECTED; OBSERVE_ONLY → `OBSERVED` (terminal) + observe-log entry (`observe:<triggerId>`, written before the status change). No WorkItem is created for either.
+- _Phase 5 (done)_: `RuleBasedAuthorization` + `loadAuthorizationConfig` (YAML via `Bun.YAML`, or JSON; strict validation). Rule scope defaults to `new_work`, so the roadmap's "CI failure → observe_only" rule does not block CI follow-ups to a Worker. `allow` on inferred work is forced to observe-only; only `auto_act` lets proactive work run; `defaults.inferred` may not be `allow`. Example: `config/authorization.example.yaml` (tested).
+- _Phase 5 (done)_: `PanelPort` (application) ← `AttentionPanelAdapter` (DB write into `SqliteAttentionStore`). The Worker raises WORKER_FAILED, DELIVERY_FAILED, and QUESTION/REVIEW_REQUEST (from `WorkResult.attention`); the Watchdog raises WATCHDOG_ESCALATION. Healthy work raises nothing.
+- _Phase 5 (done)_: `BunPanelServer`: binds 127.0.0.1 by default, optional bearer token (open the page with `#token=…`), strict CSP, untrusted text rendered via `textContent` only, resolve requires JSON + same Origin (CSRF). Endpoints as in the roadmap; resolve returns 200/404/409.
+- _Phase 5 (done)_: `apps/runtime/src/createRuntime.ts` is the composition root. `start()` recovers PENDING triggers and undispatched ACCEPTED ones, subscribes sources, starts the Watchdog and panel. STALE follow-ups: the stale subscription is dropped before re-routing; as a backstop an event re-routed more than 3 times is dropped and raised as `ROUTING_LOOP`.
 - _Not covered by any phase_: real `LlmPort` (Claude API) and `SourcePort` (e.g. GitHub) adapters. Add them as a Phase 6 once Phase 5 is done.
 - The two reference projects named below have not been checked; treat them as unconfirmed.
 

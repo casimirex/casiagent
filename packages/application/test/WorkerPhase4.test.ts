@@ -18,6 +18,7 @@ import {
 } from "@superagent/domain";
 import {
 	FakeLlm,
+	FakePanel,
 	FakeSessionStore,
 	FakeSource,
 	FakeSpill,
@@ -62,6 +63,7 @@ async function setup(budgetTokens = 1_000_000, watchdogOverride?: WatchdogPort) 
 	}).execute(RouterState.empty());
 	const context = new ContextManager({ spill: new FakeSpill(), budgetTokens });
 	const worker = new WorkerExecutionUseCase({
+		panel: new FakePanel(),
 		store,
 		llm,
 		sources: new Map<SourceId, SourcePort>([[source.sourceId, source]]),

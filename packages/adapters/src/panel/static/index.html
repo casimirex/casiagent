@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>SuperAgent — needs attention</title>
+	<link rel="stylesheet" href="/panel.css">
+	<script src="/panel.js" defer></script>
+</head>
+<body>
+	<header>
+		<h1>Needs your attention</h1>
+		<p class="sub">Only items that need a human are shown. Healthy work stays quiet.</p>
+	</header>
+	<main>
+		<section aria-labelledby="attention-heading">
+			<h2 id="attention-heading">Open items <span id="attention-count" class="count"></span></h2>
+			<p id="attention-empty" class="empty" hidden>Nothing needs you right now.</p>
+			<ul id="attention-list" class="items"></ul>
+		</section>
+		<section aria-labelledby="observe-heading">
+			<h2 id="observe-heading">Observed, not acted on</h2>
+			<p class="sub">What the agent would have done if it were allowed to.</p>
+			<p id="observe-empty" class="empty" hidden>No observations.</p>
+			<ul id="observe-list" class="items"></ul>
+		</section>
+		<p id="error" class="error" role="alert" hidden></p>
+	</main>
+</body>
+</html>

@@ -62,7 +62,27 @@ const MIGRATIONS: readonly string[] = [
 		PRIMARY KEY (session_id, seq)
 	);
 	`,
+	// 2: Phase 5 — attention items and the observe log.
+	`
+	CREATE TABLE attention_items (
+		id           TEXT PRIMARY KEY,
+		created_at   INTEGER NOT NULL,
+		resolved_at  INTEGER,
+		data_json    TEXT NOT NULL
+	);
+	CREATE INDEX attention_items_open ON attention_items (resolved_at, created_at);
+
+	CREATE TABLE observe_log (
+		id          TEXT PRIMARY KEY,
+		created_at  INTEGER NOT NULL,
+		data_json   TEXT NOT NULL
+	);
+	CREATE INDEX observe_log_created ON observe_log (created_at);
+	`,
 ];
+
+/** The schema version a fully migrated database reports in PRAGMA user_version. */
+export const SCHEMA_VERSION = MIGRATIONS.length;
 
 /** Open (or create) a database and bring its schema up to date. Use ":memory:" for tests. */
 export function openDatabase(path: string): Database {

@@ -9,6 +9,11 @@ export interface SourceEvent {
 	readonly threadId?: string;
 	readonly authorId: string;
 	readonly authorIsBot: boolean;
+	/**
+	 * True when the author asked the agent directly (mention, DM, assignment). False for
+	 * work the agent would only be inferring (e.g. a group-chat message it overheard).
+	 */
+	readonly explicitRequest: boolean;
 	readonly payload: TriggerPayload;
 	/** Epoch milliseconds. */
 	readonly timestamp: number;

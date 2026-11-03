@@ -40,6 +40,7 @@ export function trigger(
 		threadId: "pr-1",
 		authorId: "alice",
 		authorIsBot: false,
+		explicitRequest: true,
 		payload: { body: id, nested: { list: [1, "two"] } },
 		timestamp,
 		status,
@@ -57,6 +58,7 @@ export function event(id: string): SourceEvent {
 		threadId: "pr-1",
 		authorId: "bob",
 		authorIsBot: false,
+		explicitRequest: true,
 		payload: { body: id },
 		timestamp: 0,
 	};

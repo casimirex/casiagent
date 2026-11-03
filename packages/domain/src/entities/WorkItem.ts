@@ -18,6 +18,12 @@ export interface WorkResult {
 	readonly status?: "DONE" | "AWAITING_FEEDBACK";
 	/** Threads to subscribe to, so their follow-up events come straight to this Worker. */
 	readonly artifacts?: readonly ArtifactRef[];
+	/** Set when a human must act (answer a question, review something). Shown on the panel. */
+	readonly attention?: {
+		readonly kind: "QUESTION" | "REVIEW_REQUEST";
+		readonly message: string;
+		readonly url?: string;
+	};
 }
 
 /** A unit of work created from an accepted Trigger and run by exactly one Worker. */

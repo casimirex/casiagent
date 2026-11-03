@@ -20,6 +20,7 @@ const trigger: Trigger = {
 	sourceId: SourceId.of("github:org/repo"),
 	authorId: "alice",
 	authorIsBot: false,
+	explicitRequest: true,
 	payload: { body: "please fix the bug" },
 	timestamp: 1_000,
 	status: TriggerStatus.PENDING,

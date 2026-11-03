@@ -1,0 +1,113 @@
+:root {
+	color-scheme: light dark;
+	--fg: #1d1d1f;
+	--muted: #6e6e73;
+	--line: #d2d2d7;
+	--bg: #fff;
+	--card: #f5f5f7;
+	--accent: #0a64d8;
+	--warn: #b3261e;
+}
+@media (prefers-color-scheme: dark) {
+	:root {
+		--fg: #f5f5f7;
+		--muted: #a1a1a6;
+		--line: #3a3a3c;
+		--bg: #111;
+		--card: #1c1c1e;
+		--accent: #5ea2ff;
+		--warn: #ff8a80;
+	}
+}
+* {
+	box-sizing: border-box;
+}
+body {
+	margin: 0;
+	font:
+		15px / 1.5 system-ui,
+		-apple-system,
+		"Segoe UI",
+		sans-serif;
+	color: var(--fg);
+	background: var(--bg);
+}
+header,
+main {
+	max-width: 860px;
+	margin: 0 auto;
+	padding: 0 20px;
+}
+header {
+	padding-top: 28px;
+}
+h1 {
+	font-size: 24px;
+	margin: 0 0 4px;
+}
+h2 {
+	font-size: 17px;
+	margin: 28px 0 8px;
+}
+.sub,
+.empty,
+.meta {
+	color: var(--muted);
+	margin: 0 0 12px;
+}
+.count {
+	color: var(--muted);
+	font-weight: normal;
+}
+.items {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	display: grid;
+	gap: 10px;
+}
+.item {
+	background: var(--card);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	padding: 12px 14px;
+}
+.item .kind {
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.03em;
+	text-transform: uppercase;
+	color: var(--accent);
+}
+.item .kind.bad {
+	color: var(--warn);
+}
+.item .message {
+	margin: 4px 0 6px;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+.item .meta {
+	font-size: 13px;
+	margin: 0;
+}
+.item a {
+	color: var(--accent);
+}
+.item button {
+	margin-top: 8px;
+	font: inherit;
+	padding: 4px 12px;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+	background: var(--bg);
+	color: var(--fg);
+	cursor: pointer;
+}
+.item button:disabled {
+	opacity: 0.5;
+	cursor: default;
+}
+.error {
+	color: var(--warn);
+}

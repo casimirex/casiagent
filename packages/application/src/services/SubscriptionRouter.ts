@@ -1,4 +1,14 @@
-import type { SourceEvent, Subscription, Trigger } from "@superagent/domain";
+import {
+	ActionOrigin,
+	AuthorizationDecision,
+	type AuthorizationPort,
+	type ClockPort,
+	type ObserveLogPort,
+	payloadText,
+	type SourceEvent,
+	type Subscription,
+	type Trigger,
+} from "@superagent/domain";
 import type { IntakeTriggerUseCase } from "../use-cases/IntakeTriggerUseCase";
 import type { SubscriptionRegistry } from "./SubscriptionRegistry";
 
@@ -8,7 +18,9 @@ export type RoutingDecision =
 	/** No owner: a Trigger was taken in (or already existed) for normal evaluation. */
 	| { readonly type: "ROUTER"; readonly trigger: Trigger; readonly created: boolean }
 	/** Dropped before routing. */
-	| { readonly type: "IGNORED"; readonly reason: string };
+	| { readonly type: "IGNORED"; readonly reason: string }
+	/** A follow-up the author may not direct at the Worker in action; logged, not delivered. */
+	| { readonly type: "OBSERVED"; readonly reason: string };
 
 export interface SubscriptionRouterDeps {
 	readonly registry: SubscriptionRegistry;
@@ -18,24 +30,34 @@ export interface SubscriptionRouterDeps {
 	 * threads it subscribed to; routing them to the Worker would loop forever.
 	 */
 	readonly selfAuthorIds: ReadonlySet<string>;
+	/** Gates DIRECT follow-ups, which skip the Router's filters. */
+	readonly authorization: AuthorizationPort;
+	readonly observeLog: ObserveLogPort;
+	readonly clock: ClockPort;
 }
 
 /**
  * Decides where an inbound event goes, from registry state alone (no LLM).
  *
- * Note: DIRECT events skip the Router's filters, including bot and user checks. That is
- * intended for CI results and review comments on a Worker's own PR. Phase 5 authorization
- * must also gate DIRECT deliveries.
+ * DIRECT events skip the Router's filters (so CI bots can reach the Worker), but are still
+ * authorized as FOLLOW_UP actions: otherwise anyone able to comment on the Worker's PR
+ * could instruct it. ROUTER events are authorized later, in EvaluateTriggerUseCase.
  */
 export class SubscriptionRouter {
 	readonly #registry: SubscriptionRegistry;
 	readonly #intake: IntakeTriggerUseCase;
 	readonly #selfAuthorIds: ReadonlySet<string>;
+	readonly #authorization: AuthorizationPort;
+	readonly #observeLog: ObserveLogPort;
+	readonly #clock: ClockPort;
 
 	constructor(deps: SubscriptionRouterDeps) {
 		this.#registry = deps.registry;
 		this.#intake = deps.intake;
 		this.#selfAuthorIds = deps.selfAuthorIds;
+		this.#authorization = deps.authorization;
+		this.#observeLog = deps.observeLog;
+		this.#clock = deps.clock;
 	}
 
 	async routeEvent(event: SourceEvent): Promise<RoutingDecision> {
@@ -44,6 +66,26 @@ export class SubscriptionRouter {
 		}
 		const subscription = await this.#registry.lookup(event);
 		if (subscription !== undefined) {
+			const description = payloadText(event.payload);
+			const auth = this.#authorization.canAct(event.authorId, event.sourceId, {
+				origin: ActionOrigin.FOLLOW_UP,
+				description,
+			});
+			if (auth.decision === AuthorizationDecision.DENY) {
+				return { type: "IGNORED", reason: auth.reason };
+			}
+			if (auth.decision === AuthorizationDecision.OBSERVE_ONLY) {
+				await this.#observeLog.record({
+					id: `observe:${event.sourceId}#${event.id}`,
+					sourceId: event.sourceId,
+					...(event.threadId === undefined ? {} : { threadId: event.threadId }),
+					authorId: event.authorId,
+					intendedAction: `Deliver follow-up to worker ${subscription.workerId}: ${description.slice(0, 500)}`,
+					rationale: auth.reason,
+					createdAt: this.#clock.now(),
+				});
+				return { type: "OBSERVED", reason: auth.reason };
+			}
 			return { type: "DIRECT", workerId: subscription.workerId, subscription };
 		}
 		const { trigger, created } = await this.#intake.execute(event);

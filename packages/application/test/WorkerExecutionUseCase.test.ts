@@ -17,6 +17,7 @@ import {
 } from "@superagent/domain";
 import {
 	FakeLlm,
+	FakePanel,
 	FakeSessionStore,
 	FakeSource,
 	FakeSubscriptionStore,
@@ -47,6 +48,7 @@ async function setup(bodies: readonly string[] = ["fix the flaky test"]) {
 	const subscriptionStore = new FakeSubscriptionStore();
 	const subscriptions = new SubscriptionRegistry({ store: subscriptionStore, clock });
 	const worker = new WorkerExecutionUseCase({
+		panel: new FakePanel(),
 		context: roomyContext(),
 		store,
 		llm,
@@ -141,6 +143,7 @@ describe("WorkerExecutionUseCase", () => {
 	test("reports undelivered when no source is registered for the trigger", async () => {
 		const { store, llm, clock, subscriptions, dispatched } = await setup();
 		const worker = new WorkerExecutionUseCase({
+			panel: new FakePanel(),
 			context: roomyContext(),
 			store,
 			llm,

@@ -1,5 +1,6 @@
 export { DomainError } from "./DomainError";
-export type { AttentionItem } from "./entities/AttentionItem";
+export type { AttentionItem, AttentionKind } from "./entities/AttentionItem";
+export type { Observation } from "./entities/Observation";
 export {
 	type ContextMessage,
 	SESSION_TRANSITIONS,
@@ -24,7 +25,18 @@ export {
 	type WorkItem,
 	type WorkResult,
 } from "./entities/WorkItem";
-export type { AttentionSinkPort } from "./ports/AttentionSinkPort";
+export type {
+	AttentionSinkPort,
+	AttentionStorePort,
+	ResolveResult,
+} from "./ports/AttentionSinkPort";
+export {
+	type Action,
+	ActionOrigin,
+	AuthorizationDecision,
+	type AuthorizationPort,
+	type AuthorizationVerdict,
+} from "./ports/AuthorizationPort";
 export type { ClockPort } from "./ports/ClockPort";
 export type { ContextSpillPort, SpilledMessage } from "./ports/ContextSpillPort";
 export type { IdGeneratorPort } from "./ports/IdGeneratorPort";
@@ -34,6 +46,7 @@ export type {
 	TriggerEvaluationRequest,
 	TriggerVerdict,
 } from "./ports/LlmPort";
+export type { ObserveLogPort } from "./ports/ObserveLogPort";
 export type { CancelSchedule, SchedulerPort } from "./ports/SchedulerPort";
 export type { SessionStorePort } from "./ports/SessionStorePort";
 export type {

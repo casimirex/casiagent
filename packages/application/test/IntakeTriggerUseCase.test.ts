@@ -17,6 +17,7 @@ describe("IntakeTriggerUseCase", () => {
 			threadId: "pr-42",
 			authorId: "alice",
 			authorIsBot: false,
+			explicitRequest: true,
 			payload: event.payload,
 			timestamp: 500,
 			status: TriggerStatus.PENDING,

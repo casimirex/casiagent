@@ -1,0 +1,32 @@
+# SuperAgent authorization policy. Copy to config/authorization.yaml and edit.
+# Validated at startup: unknown keys, bad regexes and unsafe defaults are rejected.
+
+# Who may make the agent act. Anyone else is denied.
+allowed_users: ["alice", "bob"]
+
+# Where the agent may act ("<provider>:<identifier>").
+allowed_sources: ["github:org/repo"]
+
+# May post follow-ups on a Worker's own PR/thread (e.g. CI results), but never start work.
+trusted_followup_authors: ["github-actions[bot]"]
+
+# First matching rule wins. Patterns are case-insensitive regular expressions.
+# action: allow | deny | observe_only | auto_act
+# scope:  explicit_request | inferred | new_work (default) | follow_up | any
+#   - "allow" never lets inferred (proactive) work run; it becomes observe-only.
+#   - only "auto_act" lets inferred work run.
+rules:
+  - pattern: "deploy to prod|drop table|force.?push"
+    action: deny
+    scope: any
+  - pattern: "fix bug|reproduce issue"
+    action: allow
+    scope: explicit_request
+  - pattern: "CI failure"
+    action: observe_only # logs but does not act
+
+# When no rule matches.
+defaults:
+  explicit_request: allow # then the fast filter and LLM decide
+  inferred: observe_only # may only be observe_only or deny
+  follow_up: allow

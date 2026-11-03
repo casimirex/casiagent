@@ -27,6 +27,7 @@ function trigger(overrides: Partial<Trigger> = {}): Trigger {
 		sourceId: REPO,
 		authorId: "alice",
 		authorIsBot: false,
+		explicitRequest: true,
 		payload: { body: "hello" },
 		timestamp: 0,
 		status: TriggerStatus.PENDING,

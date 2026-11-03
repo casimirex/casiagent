@@ -17,7 +17,10 @@ import {
 	type TriggerVerdict,
 } from "@superagent/domain";
 import {
+	FakeAuthorization,
 	FakeLlm,
+	FakeObserveLog,
+	FakePanel,
 	FakeSessionStore,
 	FakeSource,
 	FakeSubscriptionStore,
@@ -40,6 +43,9 @@ async function setup(event: Partial<SourceEvent> = {}) {
 	const store = new FakeSessionStore();
 	const llm = new FakeLlm();
 	const evaluate = new EvaluateTriggerUseCase({
+		authorization: new FakeAuthorization(),
+		observeLog: new FakeObserveLog(),
+		clock: new FixedClock(),
 		store,
 		llm,
 		rules,
@@ -223,6 +229,9 @@ describe("Phase 1 + 2 together", () => {
 		};
 		const intake = new IntakeTriggerUseCase({ store });
 		const evaluate = new EvaluateTriggerUseCase({
+			authorization: new FakeAuthorization(),
+			observeLog: new FakeObserveLog(),
+			clock: new FixedClock(),
 			store,
 			llm,
 			rules,
@@ -252,15 +261,22 @@ describe("Phase 1 + 2 together", () => {
 		const { trigger } = await new IntakeTriggerUseCase({ store }).execute(
 			makeEvent({ payload: { body: "please fix the bug in checkout" } }),
 		);
-		await new EvaluateTriggerUseCase({ store, llm, rules, authorizationRules: AUTH_RULES }).execute(
-			trigger.id,
-		);
+		await new EvaluateTriggerUseCase({
+			authorization: new FakeAuthorization(),
+			observeLog: new FakeObserveLog(),
+			clock: new FixedClock(),
+			store,
+			llm,
+			rules,
+			authorizationRules: AUTH_RULES,
+		}).execute(trigger.id);
 		const { dispatched } = await new DispatchWorkUseCase({
 			store,
 			ids: new SequentialIds(),
 			clock,
 		}).execute(RouterState.empty());
 		const worker = new WorkerExecutionUseCase({
+			panel: new FakePanel(),
 			context: roomyContext(),
 			store,
 			llm,

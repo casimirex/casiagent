@@ -39,6 +39,7 @@ export class IntakeTriggerUseCase {
 			...(event.threadId === undefined ? {} : { threadId: event.threadId }),
 			authorId: event.authorId,
 			authorIsBot: event.authorIsBot,
+			explicitRequest: event.explicitRequest,
 			payload: event.payload,
 			timestamp: event.timestamp,
 			status: TriggerStatus.PENDING,

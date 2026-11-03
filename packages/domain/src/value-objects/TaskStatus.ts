@@ -9,6 +9,8 @@ export const TriggerStatus = {
 	ACCEPTED: "ACCEPTED",
 	REJECTED: "REJECTED",
 	CONSUMED: "CONSUMED",
+	/** Authorized for observation only: logged what would have been done, nothing done. Terminal. */
+	OBSERVED: "OBSERVED",
 } as const;
 export type TriggerStatus = (typeof TriggerStatus)[keyof typeof TriggerStatus];
 

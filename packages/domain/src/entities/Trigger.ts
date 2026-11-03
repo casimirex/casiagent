@@ -8,7 +8,7 @@ export type TriggerPayload = Readonly<Record<string, unknown>>;
 
 /** Why a Trigger was accepted or rejected, and by which stage. */
 export interface TriggerDecision {
-	readonly stage: "FAST_FILTER" | "LLM";
+	readonly stage: "AUTHORIZATION" | "FAST_FILTER" | "LLM";
 	readonly reason: string;
 	readonly priority: TriggerPriority;
 }
@@ -21,6 +21,7 @@ export interface Trigger {
 	readonly threadId?: string;
 	readonly authorId: string;
 	readonly authorIsBot: boolean;
+	readonly explicitRequest: boolean;
 	readonly payload: TriggerPayload;
 	/** Epoch milliseconds when the source event happened. */
 	readonly timestamp: number;
@@ -35,6 +36,7 @@ export const TRIGGER_TRANSITIONS: TransitionTable<TriggerStatus> = {
 		TriggerStatus.EVALUATING,
 		TriggerStatus.ACCEPTED,
 		TriggerStatus.REJECTED,
+		TriggerStatus.OBSERVED,
 	],
 	// EVALUATING -> PENDING returns a Trigger for retry when the LLM fails.
 	[TriggerStatus.EVALUATING]: [
@@ -45,6 +47,7 @@ export const TRIGGER_TRANSITIONS: TransitionTable<TriggerStatus> = {
 	[TriggerStatus.ACCEPTED]: [TriggerStatus.CONSUMED],
 	[TriggerStatus.REJECTED]: [],
 	[TriggerStatus.CONSUMED]: [],
+	[TriggerStatus.OBSERVED]: [],
 };
 
 export function transitionTrigger(

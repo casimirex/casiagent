@@ -21,7 +21,10 @@ import {
 	type WorkResult,
 } from "@superagent/domain";
 import {
+	FakeAuthorization,
 	FakeLlm,
+	FakeObserveLog,
+	FakePanel,
 	FakeSessionStore,
 	FakeSource,
 	FakeSubscriptionStore,
@@ -88,11 +91,15 @@ async function setup() {
 	const registry = new SubscriptionRegistry({ store: subscriptionStore, clock });
 	const intake = new IntakeTriggerUseCase({ store });
 	const router = new SubscriptionRouter({
+		authorization: new FakeAuthorization(),
+		observeLog: new FakeObserveLog(),
+		clock: new FixedClock(),
 		registry,
 		intake,
 		selfAuthorIds: new Set(["superagent-bot"]),
 	});
 	const worker = new WorkerExecutionUseCase({
+		panel: new FakePanel(),
 		context: roomyContext(),
 		store,
 		llm,

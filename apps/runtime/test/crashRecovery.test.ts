@@ -9,7 +9,9 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+	AttentionPanelAdapter,
 	InMemoryAttentionStore,
+	InMemoryObserveLog,
 	IntervalWatchdog,
 	openDatabase,
 	SqliteContextSpillStore,
@@ -89,6 +91,7 @@ function boot(path: string, clock: Clock, model: LlmPort) {
 		sources: new Map([[REPO, source]]),
 		subscriptions: new SubscriptionRegistry({ store: subscriptionStore, clock }),
 		context: new ContextManager({ spill: new SqliteContextSpillStore(db), budgetTokens: 8_000 }),
+		panel: new AttentionPanelAdapter(attention),
 		clock,
 	});
 	const restarts: Promise<unknown>[] = [];
@@ -120,6 +123,7 @@ async function startTask(path: string, clock: Clock, model: LlmPort) {
 		threadId: "issue-1",
 		authorId: "alice",
 		authorIsBot: false,
+		explicitRequest: true,
 		payload: { body: "please fix the bug in the flaky checkout test" },
 		timestamp: 0,
 	});
@@ -134,6 +138,9 @@ async function startTask(path: string, clock: Clock, model: LlmPort) {
 		llm: model,
 		rules,
 		authorizationRules: "",
+		authorization: { canAct: () => ({ decision: "ALLOW", reason: "test" }) },
+		observeLog: new InMemoryObserveLog(),
+		clock,
 	}).execute(trigger.id);
 	const { dispatched } = await new DispatchWorkUseCase({
 		store: p1.store,

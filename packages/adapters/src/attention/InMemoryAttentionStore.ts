@@ -1,7 +1,6 @@
-import type { AttentionItem, AttentionSinkPort } from "@superagent/domain";
+import type { AttentionItem, AttentionStorePort, ResolveResult } from "@superagent/domain";
 
-/** Process-local attention items. Phase 5 adds a persistent store and the panel that reads it. */
-export class InMemoryAttentionStore implements AttentionSinkPort {
+export class InMemoryAttentionStore implements AttentionStorePort {
 	readonly #items = new Map<string, AttentionItem>();
 
 	async raise(item: AttentionItem): Promise<boolean> {
@@ -10,6 +9,22 @@ export class InMemoryAttentionStore implements AttentionSinkPort {
 		return true;
 	}
 
+	async listOpen(): Promise<readonly AttentionItem[]> {
+		return [...this.#items.values()]
+			.filter((i) => i.resolvedAt === undefined)
+			.sort((a, b) => b.createdAt - a.createdAt)
+			.map((i) => structuredClone(i));
+	}
+
+	async resolve(id: string, at: number): Promise<ResolveResult> {
+		const item = this.#items.get(id);
+		if (item === undefined) return "NOT_FOUND";
+		if (item.resolvedAt !== undefined) return "ALREADY_RESOLVED";
+		this.#items.set(id, { ...item, resolvedAt: at });
+		return "RESOLVED";
+	}
+
+	/** All items, including resolved ones. For tests. */
 	list(): readonly AttentionItem[] {
 		return [...this.#items.values()].map((i) => structuredClone(i));
 	}
