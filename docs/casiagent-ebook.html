@@ -207,6 +207,8 @@ dl.glossary dd { margin: 2px 0 0; color: var(--ink); }
 		<li><a href="#operate">16. Running it yourself</a></li>
 		<li><a href="#testing">17. How it is tested</a></li>
 		<li><a href="#limits">18. Limits and next steps</a></li>
+		<li><a href="#usecases">19. Five more ways to use it</a></li>
+		<li><a href="#usecases-more">20. Eight more use cases</a></li>
 		<li><a href="#glossary">Glossary</a></li>
 	</ol>
 </nav>
@@ -1146,6 +1148,134 @@ export interface SessionStorePort {
 		<li><strong>One source.</strong> Only GitHub is connected; other sources (chat, CI) would be new adapters behind the same <code>SourcePort</code>.</li>
 		<li><strong>No live run yet.</strong> Everything is verified against faithful fakes; the first run against a real repository is the next step.</li>
 	</ul>
+</section>
+
+<section class="chapter" id="usecases">
+	<h2 class="ch">19. Five more ways to use it</h2>
+	<div class="ch-meta"><span class="level mid">Intermediate</span><span>8 minutes</span></div>
+
+	<div class="box plain">
+		<span class="label">In plain words</span>
+		<p>Fixing bugs on request is only the first job. Everything that makes casiagent safe (listening, permission checks, observe mode, its own workspace, follow-ups, self-repair and the attention panel) works the same for other jobs. What changes is mostly the rules file, and sometimes one new "ear" for a new place to listen.</p>
+	</div>
+
+	<div class="table-wrap"><table>
+		<thead><tr><th>Use case</th><th>What it needs beyond today</th><th>Effort</th></tr></thead>
+		<tbody>
+			<tr><td>1. Dependency update assistant</td><td>Reading CI check results; pushing to the update bot's branches</td><td>Medium</td></tr>
+			<tr><td>2. Bug reproducer for triage</td><td>Setting labels on issues</td><td>Small</td></tr>
+			<tr><td>3. Documentation keeper</td><td>Noticing merged pull requests</td><td>Small</td></tr>
+			<tr><td>4. CI failure fixer</td><td>Reading CI check results (a new event source)</td><td>Larger</td></tr>
+			<tr><td>5. Team chat helper</td><td>A Slack adapter behind <code>SourcePort</code></td><td>Larger</td></tr>
+		</tbody>
+	</table></div>
+
+	<h3>1. Dependency update assistant</h3>
+	<p><strong>What it does.</strong> Tools such as Dependabot and Renovate open pull requests that upgrade libraries. When one of those fails the tests, because a function was renamed or an option changed, the agent fixes the calling code, pushes to the pull request, and runs the tests again.</p>
+	<p><strong>Why it fits.</strong> The job is narrow, repetitive and easy to review. That makes it a good first candidate for an <code>auto_act</code> rule (Chapter 5): one of the few cases where the team lets the agent act without being asked.</p>
+	<p><strong>What is needed.</strong> Permission to push to the update bot's branches, and reading CI check results, which the GitHub listener does not do yet.</p>
+	<pre><code>rules:
+  - pattern: "Bump .* from .* to"
+    action: auto_act
+    scope: inferred</code></pre>
+
+	<h3>2. Bug reproducer for issue triage</h3>
+	<p><strong>What it does.</strong> When a bug report arrives, the agent tries to write a test that fails in the way the report describes. It replies either "reproduced, see branch casiagent/…" or "could not reproduce; this is what I tried", and labels the issue so maintainers can sort it.</p>
+	<p><strong>Why it fits.</strong> The example rules file already allows "reproduce issue" requests. A report too vague to reproduce becomes a <code>QUESTION</code> card on the panel instead of a guess.</p>
+	<p><strong>What is needed.</strong> A small addition to the GitHub client so it can set labels.</p>
+
+	<h3>3. Documentation keeper</h3>
+	<p><strong>What it does.</strong> When a merged pull request changes how the software behaves, the agent proposes the matching update to the README or the docs, as a pull request of its own.</p>
+	<p><strong>Why it fits.</strong> This is inferred work (nobody asks for it), so it starts in observe mode. The panel's "Observed, not acted on" list shows what it would have changed, so the team can judge the quality before giving it an <code>auto_act</code> rule.</p>
+	<p><strong>What is needed.</strong> Noticing merged-pull-request events.</p>
+
+	<h3>4. CI failure fixer</h3>
+	<p><strong>What it does.</strong> When the main branch's build turns red, the agent reads the failing test output, finds the likely cause, and opens a pull request with a fix. If the cause is outside the code (an expired credential, a broken external service) it raises the problem on the panel instead.</p>
+	<p><strong>Why it fits.</strong> Direct routing (Chapter 7) sends every later CI result for that pull request to the same worker, which remembers what it has already tried.</p>
+	<p><strong>What is needed.</strong> A source that reads CI check results. This is the largest addition on the list.</p>
+
+	<h3>5. Team chat helper (Slack)</h3>
+	<p><strong>What it does.</strong> Someone writes in Slack: "@casiagent can you raise the timeout in the payment service?". The agent does the work in the repository, replies in the same Slack thread with the pull request link, and keeps answering follow-up questions there.</p>
+	<p><strong>Why it fits.</strong> The design already separates a direct mention from chat it only overhears. Overheard conversation becomes observe-only (Chapter 5), so the agent never acts on a passing remark.</p>
+	<p><strong>What is needed.</strong> A Slack adapter behind the existing <code>SourcePort</code> interface. Routing, authorization and workers stay as they are.</p>
+
+	<div class="box hood">
+		<span class="label">Where to start</span>
+		<p>The bug reproducer and the dependency assistant reuse the most of what already exists, and are the safest to automate. The CI fixer and the Slack helper each need a new event source first; Chapter 12 explains why that is a new adapter and not a change to the core. Chapter 20 adds eight more, three of which work today.</p>
+	</div>
+</section>
+
+<section class="chapter" id="usecases-more">
+	<h2 class="ch">20. Eight more use cases</h2>
+	<div class="ch-meta"><span class="level mid">Intermediate</span><span>10 minutes</span></div>
+
+	<p>These are grouped by how ready they are. The first three need nothing but configuration; the last two need a new source of events.</p>
+
+	<div class="table-wrap"><table>
+		<thead><tr><th>Use case</th><th>Readiness</th><th>Changes code?</th></tr></thead>
+		<tbody>
+			<tr><td>6. Codebase Q&amp;A</td><td>Works today</td><td>No</td></tr>
+			<tr><td>7. Tech-debt queue</td><td>Works today</td><td>Yes, small pull requests</td></tr>
+			<tr><td>8. Issue clarifier</td><td>Works today</td><td>No</td></tr>
+			<tr><td>9. Test writer for open pull requests</td><td>Small addition</td><td>Yes, on the pull request's branch</td></tr>
+			<tr><td>10. First-pass code reviewer</td><td>Small addition</td><td>No, comments only</td></tr>
+			<tr><td>11. Release notes drafter</td><td>Small addition</td><td>Yes, the changelog</td></tr>
+			<tr><td>12. Security advisory responder</td><td>New event source</td><td>Yes, dependency upgrades</td></tr>
+			<tr><td>13. Production error responder</td><td>New event source</td><td>Yes, proposed fixes</td></tr>
+		</tbody>
+	</table></div>
+
+	<h3>Works today, with configuration only</h3>
+
+	<h4>6. Codebase Q&amp;A</h4>
+	<p><strong>What it does.</strong> Someone asks in an issue: "@casiagent-bot where do we retry failed payments, and why?". The worker searches and reads the code, replies with file paths and an explanation, and reports <code>DONE</code> without changing anything.</p>
+	<p><strong>Why it fits.</strong> It is cheap, read-only and safe, so it is a good way for a team to build trust in the agent before letting it change code.</p>
+	<p><strong>What is needed.</strong> One sentence in <code>authorization_rules</code> saying that questions about the code are welcome, so Claude accepts them at the third gate.</p>
+
+	<h4>7. Tech-debt queue</h4>
+	<p><strong>What it does.</strong> A maintainer files small, specific issues, such as "replace the deprecated <code>request</code> library in <code>src/billing/</code>", and adds the <code>casiagent</code> label. Each issue becomes one small, reviewable pull request.</p>
+	<p><strong>Why it fits.</strong> Small jobs suit the per-task token budget, and each one gets its own worktree, so several can run side by side without interfering.</p>
+	<p><strong>What is needed.</strong> Nothing beyond a clear issue template.</p>
+
+	<h4>8. Issue clarifier</h4>
+	<p><strong>What it does.</strong> When a vague bug report is assigned to the bot, it reads the code involved and replies with the specific questions needed to act ("which version? does it happen with an empty cart?"). It then waits, and continues once the reporter answers.</p>
+	<p><strong>Why it fits.</strong> Waiting for feedback and routing follow-ups straight back to the same worker (Chapter 7) handle the back-and-forth. Nothing is changed until the report is clear.</p>
+	<p><strong>What is needed.</strong> Nothing.</p>
+
+	<h3>Need one small addition</h3>
+
+	<h4>9. Test writer for open pull requests</h4>
+	<p><strong>What it does.</strong> A reviewer adds a <code>needs-tests</code> label to a pull request, and the agent writes the missing tests on top of that pull request's branch.</p>
+	<p><strong>What is needed.</strong> Worktrees currently always start from <code>main</code> (Chapter 6). They would need an option to start from, and push to, the pull request's own branch.</p>
+
+	<h4>10. First-pass code reviewer</h4>
+	<p><strong>What it does.</strong> When the bot is requested as a reviewer, it reads the change and posts comments on specific lines: likely bugs, missing error handling, untested branches. A human still approves the change.</p>
+	<p><strong>What is needed.</strong> A "post review comments" call in the GitHub client, a read-only tool set (no <code>write_file</code> or <code>commit_and_push</code>), and noticing review-request events.</p>
+
+	<h4>11. Release notes drafter</h4>
+	<p><strong>What it does.</strong> When a milestone closes or a version tag is pushed, it reads the merged pull requests and opens a pull request that updates <code>CHANGELOG.md</code>.</p>
+	<p><strong>What is needed.</strong> Noticing milestone or tag events. Nobody asks for this directly, so it is inferred work: it starts observe-only until the team adds an <code>auto_act</code> rule for it.</p>
+
+	<h3>Need a new event source</h3>
+
+	<h4>12. Security advisory responder</h4>
+	<p><strong>What it does.</strong> When GitHub reports a vulnerable dependency, the agent upgrades it, fixes anything that breaks, runs the tests, and opens a pull request labelled <code>security</code>. Because the change is urgent, it also raises a <code>REVIEW_REQUEST</code> card on the panel.</p>
+	<p><strong>What is needed.</strong> A source for GitHub security alerts, and a token permission to read them.</p>
+
+	<h4>13. Production error responder</h4>
+	<p><strong>What it does.</strong> When an error tracker such as Sentry reports a new kind of error, the agent writes a test that reproduces it where possible and proposes a fix as a pull request linked back to the error.</p>
+	<p><strong>What is needed.</strong> An error-tracker adapter behind <code>SourcePort</code>. Start it in observe mode, because error volume can be high and not every error deserves a pull request.</p>
+
+	<div class="box hood">
+		<span class="label">A suggested order across all thirteen</span>
+		<ol>
+			<li>Start with the read-only jobs: codebase Q&amp;A (6) and the issue clarifier (8).</li>
+			<li>Then small code changes on request: the tech-debt queue (7) and the bug reproducer (2).</li>
+			<li>Then the small additions with high value for a team: the test writer (9) and the first-pass reviewer (10).</li>
+			<li>Automate only after the observe log shows good judgement: the dependency assistant (1), the documentation keeper (3) and release notes (11).</li>
+			<li>Last, the jobs that need a new event source: CI (4), Slack (5), security alerts (12) and error tracking (13).</li>
+		</ol>
+	</div>
 </section>
 
 <section class="chapter" id="glossary">
