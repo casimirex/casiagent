@@ -218,4 +218,4 @@ Conventions for contributors are in [`CLAUDE.md`](CLAUDE.md): named exports, `in
 
 ## License
 
-No license file has been added yet. Choose one before sharing or publishing the code.
+[MIT](LICENSE) © 2026 casimirex
