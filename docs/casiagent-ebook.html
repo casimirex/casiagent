@@ -209,6 +209,7 @@ dl.glossary dd { margin: 2px 0 0; color: var(--ink); }
 		<li><a href="#limits">18. Limits and next steps</a></li>
 		<li><a href="#usecases">19. Five more ways to use it</a></li>
 		<li><a href="#usecases-more">20. Eight more use cases</a></li>
+		<li><a href="#domains">21. Beyond software: other domains</a></li>
 		<li><a href="#glossary">Glossary</a></li>
 	</ol>
 </nav>
@@ -1276,6 +1277,127 @@ export interface SessionStorePort {
 			<li>Last, the jobs that need a new event source: CI (4), Slack (5), security alerts (12) and error tracking (13).</li>
 		</ol>
 	</div>
+</section>
+
+<section class="chapter" id="domains">
+	<h2 class="ch">21. Beyond software: other domains</h2>
+	<div class="ch-meta"><span class="level mid">Intermediate</span><span>15 minutes</span></div>
+
+	<div class="box plain">
+		<span class="label">In plain words</span>
+		<p>The heart of casiagent is not about code. It listens somewhere, checks who is asking, decides whether to act, gives the job to a worker with a few safe tools, follows the conversation, and asks a person only when it must. Swap where it listens and which tools the worker holds, and the same heart can help a shop, a finance team or a support desk.</p>
+	</div>
+
+	<figure>
+		<div class="frame">
+			<svg viewBox="0 0 880 270" role="img" aria-label="The core stays the same: authorization, decision gates, workers, follow-ups, watchdog and panel. On the left, the source changes per domain; on the right, the tool set changes per domain.">
+				<defs>
+					<marker id="ar7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+				</defs>
+				<g font-family="Sora, sans-serif" font-size="12.5" fill="currentColor">
+					<text x="110" y="24" text-anchor="middle" font-weight="700">Where it listens</text>
+					<text x="110" y="42" text-anchor="middle" font-size="11" class="mutedtext">a new source adapter</text>
+					<rect x="20" y="56" width="180" height="34" rx="8" class="sheet" stroke="currentColor"/><text x="110" y="78" text-anchor="middle">GitHub (today)</text>
+					<rect x="20" y="98" width="180" height="34" rx="8" class="sheet" stroke="currentColor" stroke-dasharray="5 4"/><text x="110" y="120" text-anchor="middle">Helpdesk tickets</text>
+					<rect x="20" y="140" width="180" height="34" rx="8" class="sheet" stroke="currentColor" stroke-dasharray="5 4"/><text x="110" y="162" text-anchor="middle">Shop events</text>
+					<rect x="20" y="182" width="180" height="34" rx="8" class="sheet" stroke="currentColor" stroke-dasharray="5 4"/><text x="110" y="204" text-anchor="middle">Accounting system</text>
+					<rect x="20" y="224" width="180" height="34" rx="8" class="sheet" stroke="currentColor" stroke-dasharray="5 4"/><text x="110" y="246" text-anchor="middle">Shared inbox, chat</text>
+
+					<rect x="290" y="56" width="300" height="202" rx="14" class="goodfill" stroke="currentColor"/>
+					<text x="440" y="84" text-anchor="middle" font-weight="700">The core, unchanged</text>
+					<text x="440" y="112" text-anchor="middle">who may ask · observe mode</text>
+					<text x="440" y="134" text-anchor="middle">quick rules · AI judgement</text>
+					<text x="440" y="156" text-anchor="middle">one worker per job</text>
+					<text x="440" y="178" text-anchor="middle">follow-ups · memory</text>
+					<text x="440" y="200" text-anchor="middle">watchdog · retries</text>
+					<text x="440" y="222" text-anchor="middle">attention panel · audit trail</text>
+
+					<text x="770" y="24" text-anchor="middle" font-weight="700">What the worker holds</text>
+					<text x="770" y="42" text-anchor="middle" font-size="11" class="mutedtext">a new tool set</text>
+					<rect x="680" y="56" width="180" height="34" rx="8" class="sheet" stroke="currentColor"/><text x="770" y="78" text-anchor="middle">Code tools (today)</text>
+					<rect x="680" y="98" width="180" height="34" rx="8" class="sheet" stroke="currentColor" stroke-dasharray="5 4"/><text x="770" y="120" text-anchor="middle">Look up an order</text>
+					<rect x="680" y="140" width="180" height="34" rx="8" class="sheet" stroke="currentColor" stroke-dasharray="5 4"/><text x="770" y="162" text-anchor="middle">Draft a refund</text>
+					<rect x="680" y="182" width="180" height="34" rx="8" class="sheet" stroke="currentColor" stroke-dasharray="5 4"/><text x="770" y="204" text-anchor="middle">Match an invoice</text>
+					<rect x="680" y="224" width="180" height="34" rx="8" class="sheet" stroke="currentColor" stroke-dasharray="5 4"/><text x="770" y="246" text-anchor="middle">Draft a reply</text>
+
+					<line x1="200" y1="157" x2="288" y2="157" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar7)"/>
+					<text x="244" y="149" text-anchor="middle" font-size="11" class="mutedtext">events</text>
+					<line x1="590" y1="157" x2="678" y2="157" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar7)"/>
+					<text x="634" y="149" text-anchor="middle" font-size="11" class="mutedtext">uses</text>
+				</g>
+			</svg>
+		</div>
+		<figcaption>Figure 8. A new domain means a new source on the left and a new tool set on the right. Solid boxes exist today; dashed boxes would be built per domain.</figcaption>
+	</figure>
+
+	<h3>What has to be built for a new domain</h3>
+	<ol>
+		<li><strong>A source adapter</strong> that turns the domain's events (a new ticket, an order problem, an invoice) into the agent's events, implementing the same <code>SourcePort</code> as the GitHub listener. It must say whether each event was an explicit request, and how to reply.</li>
+		<li><strong>A tool set</strong> for the worker: narrow tools for that domain's system, plugged in where the code tools are today (the Claude adapter's <code>toolsets</code> option).</li>
+		<li><strong>A worker prompt</strong> for the domain. Today's system prompt describes an engineering agent; a shop or a finance team needs its own wording, versioned the same way.</li>
+		<li><strong>A rules file</strong> naming who may ask, where, and for what.</li>
+	</ol>
+
+	<div class="box warn">
+		<span class="label">Draft, then a human approves</span>
+		<p>Wherever money, customers or legal commitments are involved, the worker's tools should <em>prepare</em> an action, never perform it: a refund draft, a proposed journal entry, a suggested reply. The worker then raises a <code>REVIEW_REQUEST</code> card and a person approves it in the system they already use.</p>
+		<p>Limits such as "no refunds above $200" belong <strong>inside the tool</strong>, which can check the number and refuse. The rules file (Chapter 5) matches words, not amounts, so it is the wrong place for them.</p>
+	</div>
+
+	<h3>E-commerce</h3>
+	<div class="table-wrap"><table>
+		<thead><tr><th>Use case</th><th>Listens to</th><th>What the worker does</th><th>Guard rail</th></tr></thead>
+		<tbody>
+			<tr><td>Order problem resolver</td><td>Support tickets ("where is my order?", "item damaged")</td><td>Looks up the order and tracking, drafts a reply, prepares a replacement or refund if policy allows</td><td>Refunds and replacements are drafts; a person approves</td></tr>
+			<tr><td>Catalog quality checker</td><td>New or edited product listings</td><td>Finds missing sizes, empty descriptions, prices below cost, broken images; fixes text, flags prices</td><td>Text fixes only; price changes go to a person</td></tr>
+			<tr><td>Stock-out watcher</td><td>Low-stock alerts</td><td>Checks sales speed and supplier lead time, drafts a purchase order</td><td>Purchase orders are never sent automatically</td></tr>
+			<tr><td>Review responder</td><td>New product reviews</td><td>Drafts a polite, specific reply; spots repeated complaints about one product</td><td>Negative reviews always go to a person first</td></tr>
+			<tr><td>Promotion checker</td><td>New discount codes or campaigns</td><td>Checks for codes that stack into a loss, wrong dates, or products left out</td><td>Observe-only: reports problems, changes nothing</td></tr>
+		</tbody>
+	</table></div>
+
+	<h3>Finance and accounting</h3>
+	<div class="table-wrap"><table>
+		<thead><tr><th>Use case</th><th>Listens to</th><th>What the worker does</th><th>Guard rail</th></tr></thead>
+		<tbody>
+			<tr><td>Invoice matching</td><td>New supplier invoices</td><td>Matches each invoice to its purchase order and delivery receipt; marks it matched or explains the mismatch</td><td>Never approves or pays; exceptions go to a person</td></tr>
+			<tr><td>Expense pre-check</td><td>Submitted expense reports</td><td>Checks the policy (limits, missing receipts, duplicate claims) and comments on the report</td><td>Approval stays with the manager</td></tr>
+			<tr><td>Bank reconciliation helper</td><td>Unmatched bank transactions</td><td>Searches the ledger for the likely match and proposes the entry that would reconcile it</td><td>Journal entries are proposals, posted by a person</td></tr>
+			<tr><td>Billing dispute assistant</td><td>Customer billing complaints</td><td>Gathers the invoice history and usage, drafts a response and, if justified, a credit note proposal</td><td>Credits are drafts with an amount limit in the tool</td></tr>
+			<tr><td>Month-end close preparer</td><td>Close-checklist tasks</td><td>Prepares variance explanations and supporting schedules as documents for review</td><td>Prepares only; the books are closed by people</td></tr>
+		</tbody>
+	</table></div>
+
+	<div class="box hood">
+		<span class="label">Why the design suits regulated work</span>
+		<ul>
+			<li><strong>Audit trail.</strong> Every request, decision (with its reason), result and observation is stored in the database, so "why did the agent do this?" has a written answer.</li>
+			<li><strong>Observe first.</strong> A new job can run for weeks in observe mode while the team reads what it would have done (Chapter 5).</li>
+			<li><strong>Least privilege.</strong> Each tool does one thing, with its own limits, and the worker cannot reach anything else.</li>
+			<li><strong>Data care.</strong> Customer and financial data is sent to the model provider. Check your agreements and data-protection obligations before connecting real records, and keep tools from returning more personal data than a job needs.</li>
+		</ul>
+	</div>
+
+	<h3>Other domains</h3>
+	<div class="table-wrap"><table>
+		<thead><tr><th>Domain</th><th>Use case</th><th>What the worker does</th><th>Guard rail</th></tr></thead>
+		<tbody>
+			<tr><td>Customer support</td><td>Ticket triage and answers</td><td>Classifies the ticket, answers from the help-centre articles, escalates what it cannot answer</td><td>Replies to explicit questions only; unsure answers go to a person</td></tr>
+			<tr><td>IT operations</td><td>Access requests and alerts</td><td>Checks a request against the access policy and prepares the change; reads an alert's runbook and gathers the diagnostics</td><td>Access changes are approved by IT; no production changes</td></tr>
+			<tr><td>HR and recruiting</td><td>Onboarding and policy questions</td><td>Prepares onboarding checklists and accounts to request; answers policy questions from the handbook</td><td>No decisions about people: hiring and screening stay human</td></tr>
+			<tr><td>Legal and compliance</td><td>Contract intake</td><td>Compares a received contract with the company's standard clauses and lists the differences with suggested edits</td><td>Suggestions only; nothing is signed or sent</td></tr>
+			<tr><td>Marketing and content</td><td>Content requests</td><td>Drafts posts, product copy or newsletters and checks them against the brand guide</td><td>Drafts only; publishing stays manual</td></tr>
+			<tr><td>Logistics</td><td>Shipment exceptions</td><td>Gathers the carrier's status, finds alternatives, drafts the customer update and a rerouting proposal</td><td>Rerouting is approved by a person</td></tr>
+		</tbody>
+	</table></div>
+
+	<h3>Choosing a first job outside software</h3>
+	<ol>
+		<li>Pick something frequent, repetitive and low-risk, where a draft saves real time: review replies, expense pre-checks, ticket triage.</li>
+		<li>Run it in observe mode first and read the observe log for a few weeks.</li>
+		<li>Move to drafts that people approve, and measure how often the drafts are accepted unchanged.</li>
+		<li>Let it act on its own (an <code>auto_act</code> rule) only for the narrowest, reversible actions, and only once the drafts have earned that trust.</li>
+	</ol>
 </section>
 
 <section class="chapter" id="glossary">
