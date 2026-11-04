@@ -1281,11 +1281,11 @@ export interface SessionStorePort {
 
 <section class="chapter" id="domains">
 	<h2 class="ch">21. Beyond software: other domains</h2>
-	<div class="ch-meta"><span class="level mid">Intermediate</span><span>15 minutes</span></div>
+	<div class="ch-meta"><span class="level mid">Intermediate</span><span>22 minutes</span></div>
 
 	<div class="box plain">
 		<span class="label">In plain words</span>
-		<p>The heart of casiagent is not about code. It listens somewhere, checks who is asking, decides whether to act, gives the job to a worker with a few safe tools, follows the conversation, and asks a person only when it must. Swap where it listens and which tools the worker holds, and the same heart can help a shop, a finance team or a support desk.</p>
+		<p>The heart of casiagent is not about code. It listens somewhere, checks who is asking, decides whether to act, gives the job to a worker with a few safe tools, follows the conversation, and asks a person only when it must. Swap where it listens and which tools the worker holds, and the same heart can help a shop, a finance team, a clinic's front desk, a school or a support desk.</p>
 	</div>
 
 	<figure>
@@ -1378,6 +1378,41 @@ export interface SessionStorePort {
 		</ul>
 	</div>
 
+	<h3>Healthcare (administrative work only)</h3>
+	<div class="box warn">
+		<span class="label">Clinical judgement stays with clinicians</span>
+		<p>In healthcare the agent should handle paperwork and logistics, never medical decisions. It does not diagnose, recommend treatment, or answer clinical questions on its own. Any message that may describe an urgent symptom goes straight to staff with no AI reply, and the source adapter should flag such messages before the agent reasons about them.</p>
+		<p>Patient information is among the most protected data there is. Before connecting real records, confirm that your agreements with the model provider and your systems meet the rules that apply to you (for example HIPAA in the United States or GDPR in the European Union), and give each tool only the fields its job needs.</p>
+	</div>
+	<div class="table-wrap"><table>
+		<thead><tr><th>Use case</th><th>Listens to</th><th>What the worker does</th><th>Guard rail</th></tr></thead>
+		<tbody>
+			<tr><td>Appointment requests</td><td>Patient-portal booking and rescheduling messages</td><td>Finds open slots that fit the request and drafts the confirmation</td><td>Staff confirm the booking; no clinical content in replies</td></tr>
+			<tr><td>Portal message routing</td><td>Incoming patient messages</td><td>Sorts each message to the right team (billing, scheduling, nurse line) with a one-line summary</td><td>Routes only, never answers clinical questions; urgent wording goes to staff at once</td></tr>
+			<tr><td>Prior authorization paperwork</td><td>Orders that need insurer approval</td><td>Gathers the required documents from the record and fills in the insurer's form as a draft</td><td>Submitted by staff after review</td></tr>
+			<tr><td>Claim denial follow-up</td><td>Denied insurance claims</td><td>Reads the denial reason, finds the supporting documentation, drafts the appeal letter</td><td>Billing staff review and send</td></tr>
+			<tr><td>Visit note drafting</td><td>A clinician's request after a visit</td><td>Turns the clinician's dictation into a structured note draft</td><td>The clinician edits and signs; nothing enters the record unsigned</td></tr>
+			<tr><td>Staff policy questions</td><td>Internal help requests</td><td>Answers from the organisation's own policies and procedures, citing the document</td><td>Internal use only; unclear cases go to the policy owner</td></tr>
+		</tbody>
+	</table></div>
+
+	<h3>Education</h3>
+	<div class="box warn">
+		<span class="label">Teachers decide, students learn</span>
+		<p>Grades, academic-integrity decisions and anything that affects a student's record stay with teachers and staff. For students, the agent should act as a tutor that explains and asks guiding questions, not as an answer machine for graded work. Student records and data about minors are protected (for example under FERPA in the United States), so tools should expose only what a job needs.</p>
+	</div>
+	<div class="table-wrap"><table>
+		<thead><tr><th>Use case</th><th>Listens to</th><th>What the worker does</th><th>Guard rail</th></tr></thead>
+		<tbody>
+			<tr><td>Course forum helper</td><td>Student questions in the course forum</td><td>Answers from the course's own materials, points to the right lecture or page, and asks guiding questions on homework</td><td>Never gives solutions to graded work; hard or personal questions go to the teacher</td></tr>
+			<tr><td>Feedback drafts</td><td>A teacher's request on submitted work</td><td>Drafts comments against the teacher's rubric for each submission</td><td>Teachers edit and release feedback; grading stays human</td></tr>
+			<tr><td>Course material upkeep</td><td>Term start, or edits to course pages</td><td>Finds broken links, outdated dates and missing files, and fixes or flags them</td><td>Content changes reviewed by the course owner</td></tr>
+			<tr><td>Accessibility checker</td><td>New course materials</td><td>Finds images without descriptions, videos without captions and unreadable documents; drafts alt text</td><td>Drafts for the author to approve</td></tr>
+			<tr><td>Administrative requests</td><td>Help-desk tickets (transcripts, enrolment, deadlines)</td><td>Answers from published policies and prepares the request form for staff</td><td>Record changes are made by staff</td></tr>
+			<tr><td>Family and student messages</td><td>Teacher requests</td><td>Drafts clear, translated updates about events, deadlines and progress</td><td>Teachers review and send</td></tr>
+		</tbody>
+	</table></div>
+
 	<h3>Other domains</h3>
 	<div class="table-wrap"><table>
 		<thead><tr><th>Domain</th><th>Use case</th><th>What the worker does</th><th>Guard rail</th></tr></thead>
@@ -1388,6 +1423,19 @@ export interface SessionStorePort {
 			<tr><td>Legal and compliance</td><td>Contract intake</td><td>Compares a received contract with the company's standard clauses and lists the differences with suggested edits</td><td>Suggestions only; nothing is signed or sent</td></tr>
 			<tr><td>Marketing and content</td><td>Content requests</td><td>Drafts posts, product copy or newsletters and checks them against the brand guide</td><td>Drafts only; publishing stays manual</td></tr>
 			<tr><td>Logistics</td><td>Shipment exceptions</td><td>Gathers the carrier's status, finds alternatives, drafts the customer update and a rerouting proposal</td><td>Rerouting is approved by a person</td></tr>
+		</tbody>
+	</table></div>
+
+	<h3>More domains</h3>
+	<div class="table-wrap"><table>
+		<thead><tr><th>Domain</th><th>Use case</th><th>What the worker does</th><th>Guard rail</th></tr></thead>
+		<tbody>
+			<tr><td>Insurance</td><td>Claim intake</td><td>Checks a new claim for missing documents and inconsistent dates, and drafts the request for what is missing</td><td>Coverage decisions and payouts stay human</td></tr>
+			<tr><td>Property management</td><td>Maintenance requests</td><td>Classifies the request, asks the tenant for photos or details, and drafts the work order for the right contractor</td><td>Emergencies (gas, water, fire) go to staff at once</td></tr>
+			<tr><td>Public services</td><td>Citizen enquiries and forms</td><td>Answers from published guidance and checks submitted forms for missing parts before staff see them</td><td>Eligibility decisions stay with officials</td></tr>
+			<tr><td>Manufacturing</td><td>Quality incidents and maintenance tickets</td><td>Gathers machine logs and past incidents, drafts the incident report and a likely-cause summary</td><td>No changes to machines or production settings</td></tr>
+			<tr><td>Hospitality and travel</td><td>Booking change requests</td><td>Finds alternatives that match the guest's request and the rate rules, drafts the reply</td><td>Changes with a cost are confirmed by staff</td></tr>
+			<tr><td>Non-profit</td><td>Grant reporting deadlines</td><td>Collects programme figures and stories, drafts the report in the funder's format</td><td>Reports are reviewed and submitted by staff</td></tr>
 		</tbody>
 	</table></div>
 
