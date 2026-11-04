@@ -1281,11 +1281,11 @@ export interface SessionStorePort {
 
 <section class="chapter" id="domains">
 	<h2 class="ch">21. Beyond software: other domains</h2>
-	<div class="ch-meta"><span class="level mid">Intermediate</span><span>40 minutes</span></div>
+	<div class="ch-meta"><span class="level mid">Intermediate</span><span>46 minutes</span></div>
 
 	<div class="box plain">
 		<span class="label">In plain words</span>
-		<p>The heart of casiagent is not about code. It listens somewhere, checks who is asking, decides whether to act, gives the job to a worker with a few safe tools, follows the conversation, and asks a person only when it must. Swap where it listens and which tools the worker holds, and the same heart can help a shop, a store chain, a bank, an insurer, a hotel, a finance team, a freight company, a law firm, a clinic's front desk, a school or a support desk.</p>
+		<p>The heart of casiagent is not about code. It listens somewhere, checks who is asking, decides whether to act, gives the job to a worker with a few safe tools, follows the conversation, and asks a person only when it must. Swap where it listens and which tools the worker holds, and the same heart can help a shop, a store chain, a bank, an insurer, a hotel, a phone company, an estate agency, a finance team, a freight company, a law firm, a clinic's front desk, a school or a support desk.</p>
 	</div>
 
 	<figure>
@@ -1516,6 +1516,40 @@ export interface SessionStorePort {
 		</tbody>
 	</table></div>
 
+	<h3>Telecom</h3>
+	<div class="box warn">
+		<span class="label">Identity first, and emergencies to a person</span>
+		<p>Moving a phone number to a new SIM card or another operator is a favourite trick of fraudsters, so the agent never starts a SIM swap or a number transfer: those happen only after the operator's own identity checks, carried out by staff. Plan changes and anything that adds a charge need the customer's explicit confirmation. If a customer cannot reach emergency services, the message goes to staff at once with no AI reply. Usage and location data are private, so tools return only what a job needs.</p>
+	</div>
+	<div class="table-wrap"><table>
+		<thead><tr><th>Use case</th><th>Listens to</th><th>What the worker does</th><th>Guard rail</th></tr></thead>
+		<tbody>
+			<tr><td>Outage questions</td><td>"My internet is down" messages</td><td>Checks known outages for the customer's area and their line's status, and drafts an answer with the expected repair time</td><td>Line faults not covered by an outage become a ticket for engineers</td></tr>
+			<tr><td>Bill explanations</td><td>Questions about a bill</td><td>Explains each charge (roaming, extra data, a new device payment) from the bill and the plan's terms</td><td>Credits and refunds are decided by staff</td></tr>
+			<tr><td>Plan recommendations</td><td>Customers asking for a better plan</td><td>Compares the last months' usage with the available plans and drafts a recommendation with the price difference</td><td>The change happens only after the customer confirms</td></tr>
+			<tr><td>Installation appointments</td><td>New broadband or fibre orders</td><td>Proposes technician slots that fit the customer's availability and the engineer plan, and drafts the confirmation</td><td>Planners confirm the booking</td></tr>
+			<tr><td>Device and router troubleshooting</td><td>Technical help requests</td><td>Walks the customer through the knowledge-base steps for their device, one step at a time</td><td>Hands over to a technician when the steps run out</td></tr>
+			<tr><td>Business fault tickets</td><td>Fault reports from business customers</td><td>Gathers the circuit details and diagnostics and drafts the ticket for the network operations team</td><td>Engineers make every network change</td></tr>
+		</tbody>
+	</table></div>
+
+	<h3>Real estate</h3>
+	<div class="box warn">
+		<span class="label">Fair treatment and licensed professionals</span>
+		<p>Housing is covered by anti-discrimination rules in many countries, so the agent never decides who may rent or buy, never screens or ranks applicants, and never steers people towards or away from an area. Its listing text describes the property, not the kind of person who should live there. Deposits, offers and contracts are handled by licensed agents and lawyers. Emergency repairs (gas, flooding, no heating in winter) go to staff at once.</p>
+	</div>
+	<div class="table-wrap"><table>
+		<thead><tr><th>Use case</th><th>Listens to</th><th>What the worker does</th><th>Guard rail</th></tr></thead>
+		<tbody>
+			<tr><td>Listing descriptions</td><td>New properties added to the system</td><td>Drafts an accurate description from the property's data, floor plan and photos</td><td>Reviewed by the agent before publishing; no wording about who should live there</td></tr>
+			<tr><td>Enquiry answers</td><td>Questions about a listing</td><td>Answers from the listing's facts (size, fees, availability, rules on pets) and offers viewing times</td><td>Anything not in the listing goes to the agent</td></tr>
+			<tr><td>Viewing scheduling</td><td>Viewing requests</td><td>Matches requests with the agent's calendar and the occupant's notice rules, and drafts the confirmations</td><td>Agents confirm their own calendar</td></tr>
+			<tr><td>Application completeness</td><td>Rental or purchase applications</td><td>Checks for missing documents and drafts the request to the applicant</td><td>No screening, ranking or approval by the agent</td></tr>
+			<tr><td>Maintenance requests</td><td>Tenant repair requests</td><td>Classifies the request, asks for photos or details, and drafts the work order for the right contractor</td><td>Emergencies go to staff at once; costs approved by the property manager</td></tr>
+			<tr><td>Renewals and move-outs</td><td>Leases nearing their end date</td><td>Drafts the renewal offer or the move-out notice, and the inspection checklist</td><td>Rent changes and deposit deductions decided by staff</td></tr>
+		</tbody>
+	</table></div>
+
 	<h3>Other domains</h3>
 	<div class="table-wrap"><table>
 		<thead><tr><th>Domain</th><th>Use case</th><th>What the worker does</th><th>Guard rail</th></tr></thead>
@@ -1534,7 +1568,7 @@ export interface SessionStorePort {
 		<thead><tr><th>Domain</th><th>Use case</th><th>What the worker does</th><th>Guard rail</th></tr></thead>
 		<tbody>
 			<tr><td>Construction</td><td>Site questions and submittals</td><td>Tracks requests for information and submittals, finds the relevant drawing or specification section, and drafts the response for the engineer</td><td>Engineers and architects answer and approve</td></tr>
-			<tr><td>Property management</td><td>Maintenance requests</td><td>Classifies the request, asks the tenant for photos or details, and drafts the work order for the right contractor</td><td>Emergencies (gas, water, fire) go to staff at once</td></tr>
+			<tr><td>Agriculture</td><td>Equipment and supply requests</td><td>Checks machine service intervals and seed, feed or fertiliser stock, and drafts maintenance bookings and supply orders</td><td>Orders and field decisions stay with the farm manager</td></tr>
 			<tr><td>Public services</td><td>Citizen enquiries and forms</td><td>Answers from published guidance and checks submitted forms for missing parts before staff see them</td><td>Eligibility decisions stay with officials</td></tr>
 			<tr><td>Manufacturing</td><td>Quality incidents and maintenance tickets</td><td>Gathers machine logs and past incidents, drafts the incident report and a likely-cause summary</td><td>No changes to machines or production settings</td></tr>
 			<tr><td>Automotive service</td><td>Service bookings and recall checks</td><td>Checks the vehicle's service history and open recalls, proposes a booking slot and drafts the reminder</td><td>Repairs and quotes confirmed by the service advisor</td></tr>
