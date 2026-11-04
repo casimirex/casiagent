@@ -1,3 +1,4 @@
+import type { Database } from "bun:sqlite";
 import {
 	AttentionPanelAdapter,
 	type AuthorizationConfig,
@@ -15,6 +16,7 @@ import {
 	UuidGenerator,
 } from "@casiagent/adapters";
 import {
+	AbandonStaleWorkUseCase,
 	ContextManager,
 	DispatchWorkUseCase,
 	EvaluateTriggerUseCase,
@@ -31,6 +33,7 @@ import {
 	createFilterRules,
 	type FilterRulesConfig,
 	type IdGeneratorPort,
+	isTerminalWorkItem,
 	type LlmPort,
 	RouterState,
 	type SourceEvent,
@@ -40,9 +43,22 @@ import {
 	type Unsubscribe,
 } from "@casiagent/domain";
 
+/** Per-task workspaces the runtime cleans up once their WorkItem has finished. */
+export interface WorkspaceCleaner {
+	/** WorkItem ids that currently have a workspace. */
+	list(): Promise<readonly string[]>;
+	remove(workItemId: string): Promise<void>;
+}
+
 export interface RuntimeConfig {
-	/** SQLite file path, or ":memory:". */
-	readonly databasePath: string;
+	/** SQLite file path, or ":memory:". Ignored when `database` is given. */
+	readonly databasePath?: string;
+	/** An already-open database (e.g. shared with a source's cursor store). The runtime closes it on stop. */
+	readonly database?: Database;
+	/** Removed by the maintenance pass when their WorkItem is finished. */
+	readonly workspaces?: WorkspaceCleaner;
+	/** How often maintenance runs (retries, dispatch, abandonment, cleanup). Default 60 s. */
+	readonly maintenanceIntervalMs?: number;
 	readonly authorization: AuthorizationConfig;
 	readonly filterRules: FilterRulesConfig;
 	/** The team's written rules, given to the LLM when a trigger is ambiguous. */
@@ -53,6 +69,12 @@ export interface RuntimeConfig {
 	readonly sources: readonly SourcePort[];
 	/** Default 100,000. */
 	readonly contextBudgetTokens?: number;
+	readonly limits?: {
+		/** LLM evaluation failures before a trigger is rejected. Default 3. */
+		readonly maxEvaluationAttempts?: number;
+		/** How long work may wait for feedback before it is abandoned. Default 7 days. */
+		readonly abandonAwaitingAfterMs?: number;
+	};
 	readonly watchdog?: { readonly intervalMs?: number; readonly maxRestarts?: number };
 	/** `false` disables the panel. Defaults: 127.0.0.1, a free port, no token. */
 	readonly panel?:
@@ -74,6 +96,12 @@ export interface Runtime {
 	stop(): Promise<void>;
 	/** Resolves when no background work is in flight. */
 	idle(): Promise<void>;
+	/**
+	 * One maintenance pass: retry PENDING triggers, dispatch ACCEPTED ones, abandon work
+	 * that waited too long, and remove workspaces of finished WorkItems. Runs on a timer
+	 * after start(); public for tests and operators.
+	 */
+	maintain(): Promise<void>;
 	readonly parts: ReturnType<typeof wire>;
 }
 
@@ -81,7 +109,10 @@ export interface Runtime {
 function wire(config: RuntimeConfig) {
 	const clock = config.clock ?? new SystemClock();
 	const ids = config.ids ?? new UuidGenerator();
-	const db = openDatabase(config.databasePath);
+	if (config.database === undefined && config.databasePath === undefined) {
+		throw new Error("RuntimeConfig needs databasePath or database");
+	}
+	const db = config.database ?? openDatabase(config.databasePath as string);
 
 	const store = new SqliteSessionStore(db);
 	const subscriptionStore = new SqliteSubscriptionStore(db);
@@ -108,6 +139,10 @@ function wire(config: RuntimeConfig) {
 		llm: config.llm,
 		rules: createFilterRules(config.filterRules),
 		authorizationRules: config.authorizationRules,
+		panel: new AttentionPanelAdapter(attention),
+		...(config.limits?.maxEvaluationAttempts === undefined
+			? {}
+			: { maxEvaluationAttempts: config.limits.maxEvaluationAttempts }),
 	});
 	const dispatch = new DispatchWorkUseCase({ store, ids, clock });
 
@@ -153,6 +188,16 @@ function wire(config: RuntimeConfig) {
 		heartbeat: { watchdog, scheduler: new TimerScheduler(), intervalMs: watchdogInterval },
 	});
 
+	const abandon = new AbandonStaleWorkUseCase({
+		store,
+		subscriptions: registry,
+		panel: new AttentionPanelAdapter(attention),
+		clock,
+		...(config.limits?.abandonAwaitingAfterMs === undefined
+			? {}
+			: { maxAwaitMs: config.limits.abandonAwaitingAfterMs }),
+	});
+
 	const panel =
 		config.panel === false
 			? undefined
@@ -177,6 +222,7 @@ function wire(config: RuntimeConfig) {
 		router,
 		evaluate,
 		dispatch,
+		abandon,
 		worker,
 		watchdog,
 		panel,
@@ -191,11 +237,13 @@ function defaultOnError(error: unknown, context: string): void {
 
 export function createRuntime(config: RuntimeConfig): Runtime {
 	const parts = wire(config);
-	const { router, evaluate, dispatch, worker, registry, store, watchdog, panel } = parts;
+	const { router, evaluate, dispatch, abandon, worker, registry, store, watchdog, panel } = parts;
 	const onError = config.onError ?? defaultOnError;
 	const inFlight = new Set<Promise<unknown>>();
 	const unsubscribes: Unsubscribe[] = [];
 	let routerState = RouterState.empty();
+	let maintenanceTimer: ReturnType<typeof setInterval> | undefined;
+	let maintaining = false;
 
 	/** Run in the background; failures go to onError, never to the caller. */
 	function track(context: string, work: () => Promise<unknown>): void {
@@ -276,6 +324,31 @@ export function createRuntime(config: RuntimeConfig): Runtime {
 		return decision;
 	}
 
+	async function maintain(): Promise<void> {
+		if (maintaining) return;
+		maintaining = true;
+		try {
+			for (const t of await store.listTriggersByStatus(TriggerStatus.PENDING)) {
+				await processTrigger(t.id).catch((e: unknown) => onError(e, `retry trigger ${t.id}`));
+			}
+			await dispatchAndRun();
+			const { orphanedFollowUps } = await abandon.execute();
+			await reroute(orphanedFollowUps, 1);
+			if (config.workspaces !== undefined) {
+				for (const id of await config.workspaces.list()) {
+					const item = await store.loadWorkItem(id);
+					if (item === undefined || isTerminalWorkItem(item)) {
+						await config.workspaces
+							.remove(id)
+							.catch((e: unknown) => onError(e, `remove workspace ${id}`));
+					}
+				}
+			}
+		} finally {
+			maintaining = false;
+		}
+	}
+
 	async function idle(): Promise<void> {
 		while (inFlight.size > 0 || parts.restarts.size > 0) {
 			await Promise.allSettled([...inFlight, ...parts.restarts]);
@@ -286,13 +359,17 @@ export function createRuntime(config: RuntimeConfig): Runtime {
 		parts,
 		handleEvent,
 		idle,
+		maintain,
 		async start() {
-			// Recover work left by a previous process: unevaluated or retry-pending triggers,
-			// and accepted ones never dispatched. Stalled sessions are the Watchdog's job.
-			for (const t of await store.listTriggersByStatus(TriggerStatus.PENDING)) {
-				track(`recover trigger ${t.id}`, () => processTrigger(t.id));
-			}
-			track("recover dispatch", dispatchAndRun);
+			// Recover work left by a previous process: evaluations it was in the middle of,
+			// unevaluated or retry-pending triggers, and accepted ones never dispatched.
+			// Stalled sessions are the Watchdog's job.
+			await evaluate.recoverInterrupted();
+			track("maintenance", maintain);
+			maintenanceTimer = setInterval(
+				() => track("maintenance", maintain),
+				config.maintenanceIntervalMs ?? 60_000,
+			);
 			for (const source of config.sources) {
 				unsubscribes.push(
 					source.subscribe((event) => {
@@ -306,6 +383,7 @@ export function createRuntime(config: RuntimeConfig): Runtime {
 		},
 		async stop() {
 			for (const unsubscribe of unsubscribes.splice(0)) unsubscribe();
+			clearInterval(maintenanceTimer);
 			watchdog.stop();
 			await panel?.stop();
 			await idle();

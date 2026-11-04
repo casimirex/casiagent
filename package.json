@@ -12,7 +12,8 @@
 		"lint:fix": "biome check --write .",
 		"arch": "bun scripts/check-architecture.ts",
 		"test": "bun test",
-		"check": "bun run type-check && bun run lint && bun run arch && bun scripts/check-tests.ts && bun test"
+		"check": "bun run type-check && bun run lint && bun run arch && bun scripts/check-tests.ts && bun test",
+		"start": "bun apps/runtime/src/main.ts"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.6.4",

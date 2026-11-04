@@ -110,6 +110,18 @@ describe("GitWorktreeToolsets: worktree lifecycle", () => {
 		for (const i of items) expect(existsSync(join(ts.worktreePath(i.id), "app.ts"))).toBe(true);
 	});
 
+	test("list returns the WorkItems that have a worktree", async () => {
+		const ts = toolsets({ worktreesDir: join(base, "listed") });
+		expect(await ts.list()).toEqual([]);
+		const a = workItem();
+		const b = workItem();
+		await ts.forWorkItem(a);
+		await ts.forWorkItem(b);
+		expect((await ts.list()).sort()).toEqual([a.id, b.id].sort());
+		await ts.remove(a.id);
+		expect(await ts.list()).toEqual([b.id]);
+	});
+
 	test("remove deletes the worktree but keeps the branch", async () => {
 		const ts = toolsets();
 		const item = workItem();

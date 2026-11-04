@@ -10,7 +10,11 @@ export type AttentionKind =
 	/** A Worker wants a human to review something. */
 	| "REVIEW_REQUEST"
 	/** An event kept being re-routed and was dropped (a safety stop; indicates a bug). */
-	| "ROUTING_LOOP";
+	| "ROUTING_LOOP"
+	/** A trigger could not be evaluated after repeated LLM failures and was rejected. */
+	| "EVALUATION_FAILED"
+	/** Work waited too long for feedback and was abandoned. */
+	| "WORK_ABANDONED";
 
 /** Something a human must look at. The panel shows only these. */
 export interface AttentionItem {

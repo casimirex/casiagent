@@ -28,6 +28,8 @@ export interface Trigger {
 	readonly status: TriggerStatus;
 	/** Set when the Trigger is accepted or rejected. */
 	readonly decision?: TriggerDecision;
+	/** LLM evaluations that failed (error or invalid verdict). Capped by the evaluation use case. */
+	readonly evaluationAttempts?: number;
 }
 
 /** The fast filter may accept or reject directly; only ambiguous triggers go to EVALUATING. */

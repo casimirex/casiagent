@@ -104,6 +104,13 @@ export class SqliteSessionStore implements SessionStorePort {
 		return rows.map(toSession);
 	}
 
+	async listSessionsByStatus(status: SessionStatus): Promise<readonly Session[]> {
+		const rows = this.#db
+			.query("SELECT * FROM sessions WHERE status = $status ORDER BY updated_at, rowid")
+			.all({ status }) as SessionRow[];
+		return rows.map(toSession);
+	}
+
 	async recordHeartbeat(id: SessionId, at: number): Promise<boolean> {
 		const { changes } = this.#db
 			.query("UPDATE sessions SET last_heartbeat_at = MAX(last_heartbeat_at, $at) WHERE id = $id")

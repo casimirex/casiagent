@@ -139,6 +139,7 @@ async function startTask(path: string, clock: Clock, model: LlmPort) {
 		rules,
 		authorizationRules: "",
 		authorization: { canAct: () => ({ decision: "ALLOW", reason: "test" }) },
+		panel: new AttentionPanelAdapter(p1.attention),
 		observeLog: new InMemoryObserveLog(),
 		clock,
 	}).execute(trigger.id);

@@ -7,8 +7,9 @@
 		".": "./src/index.ts"
 	},
 	"dependencies": {
-		"@casiagent/domain": "workspace:*",
+		"@casiagent/adapters": "workspace:*",
 		"@casiagent/application": "workspace:*",
-		"@casiagent/adapters": "workspace:*"
+		"@casiagent/domain": "workspace:*",
+		"zod": "^4.6.7"
 	}
 }

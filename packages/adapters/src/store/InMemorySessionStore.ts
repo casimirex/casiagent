@@ -43,6 +43,13 @@ export class InMemorySessionStore implements SessionStorePort {
 		this.#sessions.set(session.id, structuredClone(next));
 	}
 
+	async listSessionsByStatus(status: SessionStatus): Promise<readonly Session[]> {
+		return [...this.#sessions.values()]
+			.filter((s) => s.status === status)
+			.sort((a, b) => a.updatedAt - b.updatedAt)
+			.map((s) => structuredClone(s));
+	}
+
 	async recordHeartbeat(id: SessionId, at: number): Promise<boolean> {
 		const stored = this.#sessions.get(id);
 		if (stored === undefined) return false;

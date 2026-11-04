@@ -43,6 +43,7 @@ async function setup(event: Partial<SourceEvent> = {}) {
 	const store = new FakeSessionStore();
 	const llm = new FakeLlm();
 	const evaluate = new EvaluateTriggerUseCase({
+		panel: new FakePanel(),
 		authorization: new FakeAuthorization(),
 		observeLog: new FakeObserveLog(),
 		clock: new FixedClock(),
@@ -229,6 +230,7 @@ describe("Phase 1 + 2 together", () => {
 		};
 		const intake = new IntakeTriggerUseCase({ store });
 		const evaluate = new EvaluateTriggerUseCase({
+			panel: new FakePanel(),
 			authorization: new FakeAuthorization(),
 			observeLog: new FakeObserveLog(),
 			clock: new FixedClock(),
@@ -262,6 +264,7 @@ describe("Phase 1 + 2 together", () => {
 			makeEvent({ payload: { body: "please fix the bug in checkout" } }),
 		);
 		await new EvaluateTriggerUseCase({
+			panel: new FakePanel(),
 			authorization: new FakeAuthorization(),
 			observeLog: new FakeObserveLog(),
 			clock: new FixedClock(),

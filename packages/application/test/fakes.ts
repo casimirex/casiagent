@@ -55,6 +55,13 @@ export class FakeSessionStore implements SessionStorePort {
 					};
 		this.sessions.set(session.id, structuredClone(next));
 	}
+	async listSessionsByStatus(status: Session["status"]) {
+		await tick();
+		return [...this.sessions.values()]
+			.filter((s) => s.status === status)
+			.sort((a, b) => a.updatedAt - b.updatedAt)
+			.map((s) => structuredClone(s));
+	}
 	readonly heartbeats: Array<{ id: string; at: number }> = [];
 	async recordHeartbeat(id: SessionId, at: number) {
 		await tick();

@@ -6,7 +6,7 @@ This roadmap describes how to build a SuperAgent-like system from scratch using 
 
 ## Working Notes (keep current)
 
-**Progress**: Phases 0–5 — done. Next: Phase 6 (real LLM and source adapters, runnable `main`).
+**Progress**: Phases 0–5 — done. Phase 6 steps 1–4 — done (runnable: `bun run start`). Next: a live smoke test against real GitHub + Claude (costs money; needs the user's go-ahead and credentials).
 
 **Phase 6 plan (approved 2026-11-03; not in the original roadmap)**
 - `ClaudeLlmAdapter` (adapters, `@anthropic-ai/sdk`), model `claude-opus-5-5` for both calls; set effort explicitly (Opus 5.5 defaults to `medium`): `low` for `evaluateTrigger`, `high` for `executeTask`.
@@ -32,6 +32,10 @@ This roadmap describes how to build a SuperAgent-like system from scratch using 
   - `explicitRequest` = whole-word `@<botLogin>` mention (case-insensitive), assignment to the bot, or a `requestLabels` label. Everything else is inferred.
   - Cursor: persisted; a first-ever run starts at "now" (no history replay); advanced only after delivery; each poll re-reads `overlapMs` (60 s) and intake deduplicates by event id. "Since" is strictly newer-than. A poll with no subscriber does nothing (it must not advance past events nobody received). Rate-limited → paused until the reset time.
   - Not polled yet: PR reviews (approve/request changes summary) and CI check runs/statuses. CI that reports by commenting does arrive.
+- _Step 4 (done)_: `apps/runtime/src/config.ts` (zod; strict keys; relative paths resolve against the config file; secrets only as env var names), `apps/runtime/src/main.ts` (`buildApp` wires everything without network; `main` loads `config/casiagent.yaml` or `--config`, SIGINT/SIGTERM drain, a second signal exits now). Example: `config/casiagent.example.yaml` (tested). `config/casiagent.yaml`, `config/authorization.yaml` and `data/` are gitignored.
+  - `createRuntime` accepts an open `database` (shared with the GitHub cursor store) and a `workspaces` cleaner. `maintain()` runs every 60 s: re-evaluate PENDING triggers, dispatch ACCEPTED, `AbandonStaleWorkUseCase` (WAITING sessions idle > `abandon_awaiting_after_days` → WorkItem ABANDONED via CAS, session FAILED, unsubscribed, `WORK_ABANDONED` panel item, orphaned follow-ups re-routed), remove worktrees whose WorkItem is terminal or unknown.
+  - Evaluation retries are capped: `Trigger.evaluationAttempts`; at `max_evaluation_attempts` (3) the trigger is REJECTED with an `EVALUATION_FAILED` panel item. `start()` first calls `EvaluateTriggerUseCase.recoverInterrupted()` (EVALUATING → PENDING, counted). Assumes one runtime process per database.
+  - `SessionStorePort.listSessionsByStatus` added (both stores; contract-tested).
 - Worker tools: run on the host in a per-WorkItem git worktree. Fixed tool set only: `read_file`, `list_files`, `search`, `write_file`, `run_tests` (command from config), `commit_and_push` (own branch only), `open_pr`. Paths are confined to the worktree; no general shell.
 - First source: GitHub, polling (`fetchEvents` every N s; no public URL needed). `explicitRequest` = bot @-mentioned, assigned, or a configured label. `reply` = issue/PR comment; the bot login goes in `selfAuthorIds`. GitHub token and Anthropic credentials come from env / `ant auth`, never from config files.
 - `apps/runtime/src/main.ts` + `config/casiagent.yaml`; `bun run start`; clean shutdown on SIGTERM.

@@ -45,6 +45,17 @@ export function sessionStoreContract(name: string, make: () => SessionStorePort)
 			expect((await store.listActive()).map((s) => s.id as string).sort()).toEqual(["a", "b"]);
 		});
 
+		test("listSessionsByStatus filters by status, oldest update first", async () => {
+			const store = make();
+			await store.save(session("late", { status: SessionStatus.WAITING, updatedAt: 30 }));
+			await store.save(session("early", { status: SessionStatus.WAITING, updatedAt: 10 }));
+			await store.save(session("active", { status: SessionStatus.ACTIVE, updatedAt: 20 }));
+			expect(
+				(await store.listSessionsByStatus(SessionStatus.WAITING)).map((s) => s.id as string),
+			).toEqual(["early", "late"]);
+			expect(await store.listSessionsByStatus(SessionStatus.FAILED)).toEqual([]);
+		});
+
 		test("save never moves lastHeartbeatAt or restartCount backwards", async () => {
 			const store = make();
 			await store.save(session("a", { lastHeartbeatAt: 100, restartCount: 2 }));

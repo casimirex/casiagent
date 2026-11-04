@@ -1,0 +1,51 @@
+# casiagent runtime configuration. Copy to config/casiagent.yaml and edit.
+# Start with: bun run start   (or: bun run start --config path/to/file.yaml)
+# Relative paths are resolved against this file's directory. Secrets are NOT written
+# here: name the environment variable that holds them.
+
+database: ../data/casiagent.sqlite
+authorization_file: ./authorization.yaml # copy from authorization.example.yaml
+
+# Plain-language rules the model reads when a request is ambiguous.
+authorization_rules: |
+  Act only on explicit requests from maintainers to fix bugs, reproduce issues or
+  make small, reviewable changes. Never change CI configuration, secrets or releases.
+
+# Fast deterministic filter, applied after authorization.
+filter:
+  allowed_sources: any
+  allowed_users: any # authorization already restricts users
+  keyword_patterns: ["fix (the )?bug", "reproduce (the )?issue"]
+  ignore_bots: true
+
+github:
+  owner: your-org
+  repo: your-repo
+  bot_login: casiagent-bot # the account the agent posts as
+  request_labels: [casiagent] # adding this label is an explicit request
+  poll_interval_seconds: 30
+  token_env: GITHUB_TOKEN # fine-grained token: Issues + Pull requests read/write, Contents read
+
+workspace:
+  repo_path: ../../your-repo # a local clone; git push must work from it
+  worktrees_dir: ../data/worktrees
+  base_branch: main
+  test_command: ["bun", "test"]
+  test_timeout_seconds: 600
+
+llm:
+  model: claude-opus-5-5
+  task_timeout_minutes: 30
+  task_token_budget: 200000
+  refusal_fallbacks: true
+  context_budget_tokens: 100000
+
+limits:
+  max_evaluation_attempts: 3
+  abandon_awaiting_after_days: 7
+
+panel:
+  enabled: true
+  hostname: 127.0.0.1
+  port: 4317
+  # token_env: CASIAGENT_PANEL_TOKEN   # set to require a bearer token

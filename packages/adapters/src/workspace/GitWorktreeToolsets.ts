@@ -1,4 +1,4 @@
-import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { betaZodTool } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { ToolError } from "@anthropic-ai/sdk/lib/tools/ToolError";
@@ -146,6 +146,14 @@ export class GitWorktreeToolsets {
 
 	worktreePath(workItemId: string): string {
 		return resolve(this.#config.worktreesDir, workItemId.replace(/[^A-Za-z0-9._-]/g, "-"));
+	}
+
+	/** Ids of WorkItems that currently have a worktree (for cleanup sweeps). */
+	async list(): Promise<string[]> {
+		const entries = await readdir(this.#config.worktreesDir, { withFileTypes: true }).catch(
+			() => [],
+		);
+		return entries.filter((e) => e.isDirectory()).map((e) => e.name);
 	}
 
 	/** Remove a finished WorkItem's worktree. The branch stays (it may back an open PR). */

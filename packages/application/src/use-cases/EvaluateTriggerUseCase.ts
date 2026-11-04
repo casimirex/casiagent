@@ -19,6 +19,7 @@ import {
 	transitionTrigger,
 	WorkItemStatus,
 } from "@casiagent/domain";
+import type { PanelPort } from "../ports/PanelPort";
 import {
 	EVALUATE_TRIGGER_PROMPT_VERSION,
 	renderEvaluateTriggerPrompt,
@@ -34,6 +35,10 @@ export interface EvaluateTriggerDeps {
 	readonly rules: FilterRules;
 	/** The team's written authorization rules, given to the LLM verbatim. */
 	readonly authorizationRules: string;
+	/** Where a trigger that keeps failing evaluation is surfaced. */
+	readonly panel: PanelPort;
+	/** LLM evaluation failures before the trigger is rejected. Default 3. */
+	readonly maxEvaluationAttempts?: number;
 }
 
 export type EvaluationOutcome =
@@ -99,6 +104,8 @@ export class EvaluateTriggerUseCase {
 	readonly #llm: LlmPort;
 	readonly #rules: FilterRules;
 	readonly #authorizationRules: string;
+	readonly #panel: PanelPort;
+	readonly #maxAttempts: number;
 
 	constructor(deps: EvaluateTriggerDeps) {
 		this.#store = deps.store;
@@ -108,6 +115,8 @@ export class EvaluateTriggerUseCase {
 		this.#llm = deps.llm;
 		this.#rules = deps.rules;
 		this.#authorizationRules = deps.authorizationRules;
+		this.#panel = deps.panel;
+		this.#maxAttempts = Math.max(1, deps.maxEvaluationAttempts ?? 3);
 	}
 
 	async execute(triggerId: string): Promise<EvaluationOutcome> {
@@ -198,11 +207,7 @@ export class EvaluateTriggerUseCase {
 			const invalid = validateVerdict(verdict);
 			if (invalid !== undefined) throw new Error(`Invalid LLM verdict: ${invalid}`);
 		} catch (error) {
-			const reverted = await this.#store.compareAndSetTrigger(
-				TriggerStatus.EVALUATING,
-				transitionTrigger(evaluating, TriggerStatus.PENDING),
-			);
-			return { status: "ERROR", trigger: reverted ?? evaluating, error: messageOf(error) };
+			return this.#failedAttempt(evaluating, messageOf(error));
 		}
 
 		const verdictStatus = verdict.accepted ? TriggerStatus.ACCEPTED : TriggerStatus.REJECTED;
@@ -211,6 +216,53 @@ export class EvaluateTriggerUseCase {
 			reason: verdict.reason,
 			priority: verdict.priority,
 		});
+	}
+
+	/**
+	 * Count a failed LLM evaluation. Below the cap the trigger returns to PENDING for a later
+	 * retry; at the cap it is rejected and raised on the panel, so it cannot retry forever.
+	 */
+	async #failedAttempt(evaluating: Trigger, error: string): Promise<EvaluationOutcome> {
+		const attempts = (evaluating.evaluationAttempts ?? 0) + 1;
+		if (attempts >= this.#maxAttempts) {
+			const outcome = await this.#decide(
+				evaluating,
+				TriggerStatus.EVALUATING,
+				TriggerStatus.REJECTED,
+				{
+					stage: "LLM",
+					reason: `Evaluation failed ${attempts} times; last error: ${error}`,
+					priority: TriggerPriority.NORMAL,
+				},
+			);
+			if (outcome.status === "REJECTED") {
+				await this.#panel.showAttentionItem({
+					id: `evaluation-failed:${evaluating.id}`,
+					kind: "EVALUATION_FAILED",
+					message: `A request from ${evaluating.authorId} in ${evaluating.sourceId} could not be evaluated after ${attempts} attempts and was rejected. Last error: ${error}`,
+					createdAt: this.#clock.now(),
+				});
+			}
+			return outcome;
+		}
+		const reverted = await this.#store.compareAndSetTrigger(TriggerStatus.EVALUATING, {
+			...transitionTrigger(evaluating, TriggerStatus.PENDING),
+			evaluationAttempts: attempts,
+		});
+		return { status: "ERROR", trigger: reverted ?? evaluating, error };
+	}
+
+	/**
+	 * Return triggers left EVALUATING by a crashed process to PENDING, counting the
+	 * interrupted attempt. Call once at startup; assumes one runtime per database.
+	 */
+	async recoverInterrupted(): Promise<number> {
+		let recovered = 0;
+		for (const t of await this.#store.listTriggersByStatus(TriggerStatus.EVALUATING)) {
+			const outcome = await this.#failedAttempt(t, "evaluation was interrupted (process restart)");
+			if (outcome.status !== "SKIPPED") recovered += 1;
+		}
+		return recovered;
 	}
 
 	async #decide(

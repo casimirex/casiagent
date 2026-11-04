@@ -1,1 +1,6 @@
-export { createRuntime, type Runtime, type RuntimeConfig } from "./createRuntime";
+export {
+	createRuntime,
+	type Runtime,
+	type RuntimeConfig,
+	type WorkspaceCleaner,
+} from "./createRuntime";

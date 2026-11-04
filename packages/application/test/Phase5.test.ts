@@ -47,6 +47,7 @@ function evaluator(decision: AuthorizationDecision) {
 	authorization.decide = () => ({ decision, reason: `test says ${decision}` });
 	const observeLog = new FakeObserveLog();
 	const evaluate = new EvaluateTriggerUseCase({
+		panel: new FakePanel(),
 		store,
 		llm,
 		rules,

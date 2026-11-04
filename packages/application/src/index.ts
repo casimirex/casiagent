@@ -30,6 +30,11 @@ export {
 	type SubscriptionRouterDeps,
 } from "./services/SubscriptionRouter";
 export {
+	type AbandonOutcome,
+	type AbandonStaleWorkDeps,
+	AbandonStaleWorkUseCase,
+} from "./use-cases/AbandonStaleWorkUseCase";
+export {
 	type DispatchOutcome,
 	type DispatchWorkDeps,
 	DispatchWorkUseCase,

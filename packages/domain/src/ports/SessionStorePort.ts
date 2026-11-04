@@ -2,7 +2,7 @@ import type { Session } from "../entities/Session";
 import type { Trigger } from "../entities/Trigger";
 import type { WorkItem } from "../entities/WorkItem";
 import type { SessionId } from "../value-objects/SessionId";
-import type { TriggerStatus, WorkItemStatus } from "../value-objects/TaskStatus";
+import type { SessionStatus, TriggerStatus, WorkItemStatus } from "../value-objects/TaskStatus";
 import type { SourceEvent } from "./SourcePort";
 
 /**
@@ -23,6 +23,8 @@ export interface SessionStorePort {
 	load(id: SessionId): Promise<Session | undefined>;
 	/** Sessions that should be running: ACTIVE or STALLED (not WAITING, not terminal). */
 	listActive(): Promise<readonly Session[]>;
+	/** Sessions with the given status, oldest `updatedAt` first. */
+	listSessionsByStatus(status: SessionStatus): Promise<readonly Session[]>;
 
 	/** Insert a new Trigger. Returns false, and changes nothing, if the id already exists. */
 	createTrigger(trigger: Trigger): Promise<boolean>;

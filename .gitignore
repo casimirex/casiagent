@@ -4,3 +4,6 @@ node_modules/
 *.sqlite-*
 .env
 .env.*
+data/
+config/casiagent.yaml
+config/authorization.yaml
