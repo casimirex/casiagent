@@ -1281,11 +1281,11 @@ export interface SessionStorePort {
 
 <section class="chapter" id="domains">
 	<h2 class="ch">21. Beyond software: other domains</h2>
-	<div class="ch-meta"><span class="level mid">Intermediate</span><span>28 minutes</span></div>
+	<div class="ch-meta"><span class="level mid">Intermediate</span><span>34 minutes</span></div>
 
 	<div class="box plain">
 		<span class="label">In plain words</span>
-		<p>The heart of casiagent is not about code. It listens somewhere, checks who is asking, decides whether to act, gives the job to a worker with a few safe tools, follows the conversation, and asks a person only when it must. Swap where it listens and which tools the worker holds, and the same heart can help a shop, a store chain, a finance team, a law firm, a clinic's front desk, a school or a support desk.</p>
+		<p>The heart of casiagent is not about code. It listens somewhere, checks who is asking, decides whether to act, gives the job to a worker with a few safe tools, follows the conversation, and asks a person only when it must. Swap where it listens and which tools the worker holds, and the same heart can help a shop, a store chain, a bank, a finance team, a freight company, a law firm, a clinic's front desk, a school or a support desk.</p>
 	</div>
 
 	<figure>
@@ -1447,6 +1447,41 @@ export interface SessionStorePort {
 		</tbody>
 	</table></div>
 
+	<h3>Banking</h3>
+	<div class="box warn">
+		<span class="label">Regulated work: staff decide, the agent prepares</span>
+		<p>Banking is heavily regulated, so the agent's role is narrow. It never moves money, opens or closes accounts, or changes limits. Credit decisions stay with people, because lending must be fair and explainable. Anti-money-laundering and identity checks are decided by compliance staff, and for money-laundering alerts the agent never contacts the customer, since that could warn a suspect.</p>
+		<p>The agent never asks a customer for a password, PIN or one-time code. It shows account details only after the bank's own login or verification has been completed. Customer data is strictly protected, so confirm your agreements with the model provider and your regulator's expectations before connecting real records.</p>
+	</div>
+	<div class="table-wrap"><table>
+		<thead><tr><th>Use case</th><th>Listens to</th><th>What the worker does</th><th>Guard rail</th></tr></thead>
+		<tbody>
+			<tr><td>Customer questions</td><td>Secure messages and chat after login</td><td>Explains fees, card status and how to do things, using the bank's published policies and the customer's own verified account</td><td>No money movement; anything unusual goes to an advisor</td></tr>
+			<tr><td>Card dispute preparation</td><td>A customer disputing a card payment</td><td>Gathers the transaction details and the customer's account of events, and fills in the dispute form within the card scheme's deadline</td><td>Staff check and submit the dispute</td></tr>
+			<tr><td>Identity document checks</td><td>New account applications</td><td>Checks the file for missing, unreadable or expired documents and drafts the request for what is missing</td><td>Compliance staff approve every account</td></tr>
+			<tr><td>Money-laundering alert summaries</td><td>Alerts from the monitoring system</td><td>Collects the related transactions and account history and drafts a case summary for the analyst</td><td>The analyst decides; the customer is never contacted about the alert</td></tr>
+			<tr><td>Loan application completeness</td><td>Submitted loan applications</td><td>Lists missing documents and inconsistent figures, and drafts the request to the applicant</td><td>The credit decision is made by people only</td></tr>
+			<tr><td>Complaint handling</td><td>Customer complaints</td><td>Classifies the complaint, gathers the history, drafts a response, and tracks the regulatory response deadline</td><td>Staff review and send; deadlines confirmed by a person</td></tr>
+		</tbody>
+	</table></div>
+
+	<h3>Logistics</h3>
+	<div class="box warn">
+		<span class="label">Dispatch and brokers stay in charge</span>
+		<p>The agent prepares; dispatchers, planners and licensed customs brokers decide. It never changes a driver's route or schedule directly, because driving-time and safety rules apply, and customs declarations are filed by the people licensed to file them. Claim and filing deadlines it finds are confirmed by a person.</p>
+	</div>
+	<div class="table-wrap"><table>
+		<thead><tr><th>Use case</th><th>Listens to</th><th>What the worker does</th><th>Guard rail</th></tr></thead>
+		<tbody>
+			<tr><td>Shipment exceptions</td><td>Delay, damage or failed-delivery events</td><td>Gathers the carrier's status, finds alternatives, drafts the customer update and a rerouting proposal</td><td>Rerouting is approved by dispatch</td></tr>
+			<tr><td>Delivery appointments</td><td>Shipments that need a booked delivery slot</td><td>Proposes slots that fit the receiver's opening hours and the vehicle plan, and drafts the booking message</td><td>Planners confirm the plan</td></tr>
+			<tr><td>Freight invoice audit</td><td>Carrier invoices</td><td>Compares each line with the agreed rates and the actual shipment, and drafts disputes for overcharges</td><td>Disputes are sent by the freight team</td></tr>
+			<tr><td>Customs paperwork checks</td><td>Shipments crossing a border</td><td>Checks for missing product codes, certificates or values, and drafts the request to the shipper</td><td>Declarations are filed by a licensed broker</td></tr>
+			<tr><td>Proof-of-delivery disputes</td><td>"Never received" claims from customers</td><td>Collects the signature, photos and delivery scans, and drafts the response</td><td>A person decides on refunds or redelivery</td></tr>
+			<tr><td>Disruption impact reports</td><td>Weather, strike or port-closure notices</td><td>Lists the affected shipments and customers and drafts the notices</td><td>Customer notices reviewed before sending</td></tr>
+		</tbody>
+	</table></div>
+
 	<h3>Other domains</h3>
 	<div class="table-wrap"><table>
 		<thead><tr><th>Domain</th><th>Use case</th><th>What the worker does</th><th>Guard rail</th></tr></thead>
@@ -1456,7 +1491,7 @@ export interface SessionStorePort {
 			<tr><td>HR and recruiting</td><td>Onboarding and policy questions</td><td>Prepares onboarding checklists and accounts to request; answers policy questions from the handbook</td><td>No decisions about people: hiring and screening stay human</td></tr>
 			<tr><td>Media and publishing</td><td>Fact-check requests</td><td>Checks names, dates and figures in a draft against the cited sources and lists anything it could not confirm</td><td>Editors decide what is published</td></tr>
 			<tr><td>Marketing and content</td><td>Content requests</td><td>Drafts posts, product copy or newsletters and checks them against the brand guide</td><td>Drafts only; publishing stays manual</td></tr>
-			<tr><td>Logistics</td><td>Shipment exceptions</td><td>Gathers the carrier's status, finds alternatives, drafts the customer update and a rerouting proposal</td><td>Rerouting is approved by a person</td></tr>
+			<tr><td>Energy and utilities</td><td>Outage and billing enquiries</td><td>Checks known outages and the customer's meter readings, and drafts an answer or a meter-check request</td><td>Disconnections and payment plans are decided by staff</td></tr>
 		</tbody>
 	</table></div>
 
