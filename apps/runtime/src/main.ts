@@ -18,7 +18,13 @@ import {
 	SqliteCursorStore,
 } from "@casiagent/adapters";
 import { SourceId } from "@casiagent/domain";
-import { type CasiagentConfig, ConfigFileError, loadConfigFile, requireEnv } from "./config";
+import {
+	type CasiagentConfig,
+	ConfigFileError,
+	loadConfigFile,
+	normalizeAnthropicEnv,
+	requireEnv,
+} from "./config";
 import { createRuntime, type Runtime } from "./createRuntime";
 
 export interface App {
@@ -127,10 +133,8 @@ function configPathFromArgs(argv: readonly string[]): string {
 export async function main(argv: readonly string[] = Bun.argv.slice(2)): Promise<void> {
 	const path = configPathFromArgs(argv);
 	const config = await loadConfigFile(path);
-	if (
-		process.env.ANTHROPIC_API_KEY === undefined &&
-		process.env.ANTHROPIC_AUTH_TOKEN === undefined
-	) {
+	// Empty values (e.g. copied unchanged from .env.example) would hide an `ant auth` profile.
+	if (!normalizeAnthropicEnv(process.env)) {
 		console.warn(
 			"[casiagent] ANTHROPIC_API_KEY is not set; relying on an `ant auth login` profile. Tasks will fail (and show on the panel) if none is active.",
 		);

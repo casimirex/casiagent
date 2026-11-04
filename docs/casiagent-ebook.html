@@ -1082,7 +1082,7 @@ export interface SessionStorePort {
 		<li>Install: <code>bun install</code>, then check everything: <code>bun run check</code>.</li>
 		<li>Copy <code>config/casiagent.example.yaml</code> to <code>config/casiagent.yaml</code> and <code>config/authorization.example.yaml</code> to <code>config/authorization.yaml</code>. Both copies are ignored by git.</li>
 		<li>Edit them: repository owner and name, <code>bot_login</code>, <code>workspace.repo_path</code>, your test command, and the allowed users.</li>
-		<li>Export secrets in the shell: <code>export GITHUB_TOKEN=…</code> and <code>export ANTHROPIC_API_KEY=…</code>.</li>
+		<li>Add your secrets: copy <code>.env.example</code> to <code>.env</code> and fill in <code>GITHUB_TOKEN</code> and <code>ANTHROPIC_API_KEY</code>. Bun reads <code>.env</code> automatically, and git ignores it. Exported shell variables work too.</li>
 		<li>Start: <code>bun run start</code>. It prints the repository it watches and the panel address.</li>
 		<li>Open an issue in the test repository that mentions the bot with a small, safe request, and watch.</li>
 	</ol>
@@ -1113,7 +1113,7 @@ export interface SessionStorePort {
 	<div class="table-wrap"><table>
 		<thead><tr><th>You see</th><th>Likely cause</th><th>Fix</th></tr></thead>
 		<tbody>
-			<tr><td><code>environment variable GITHUB_TOKEN is not set</code></td><td>Token not exported in this shell.</td><td>Export it and start again.</td></tr>
+			<tr><td><code>environment variable GITHUB_TOKEN is not set</code></td><td>No token in <code>.env</code> or the shell.</td><td>Fill it in <code>.env</code> (run from the repository folder) or export it, then start again.</td></tr>
 			<tr><td><code>invalid configuration … Unrecognized key</code></td><td>A typo in the config file.</td><td>Fix the key the message names.</td></tr>
 			<tr><td><code>workspace.repo_path is not a git clone</code></td><td>Wrong path.</td><td>Point it at the clone's folder.</td></tr>
 			<tr><td>The bot ignores a request</td><td>Not explicit, user not allowed, or a rule denies it.</td><td>Check the observe log on the panel; mention the bot; check the rules file.</td></tr>

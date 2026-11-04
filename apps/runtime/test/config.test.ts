@@ -2,7 +2,13 @@ import { afterAll, describe, expect, test } from "bun:test";
 import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { ConfigFileError, loadConfigFile, parseConfig, requireEnv } from "../src/config";
+import {
+	ConfigFileError,
+	loadConfigFile,
+	normalizeAnthropicEnv,
+	parseConfig,
+	requireEnv,
+} from "../src/config";
 import { buildApp } from "../src/main";
 
 const dir = mkdtempSync(join(tmpdir(), "casiagent-config-"));
@@ -61,6 +67,32 @@ describe("config", () => {
 		const error = await loadConfigFile(path).catch((e: unknown) => e);
 		expect(String(error)).toContain("bad.yaml");
 		expect(String(error)).toContain("github");
+	});
+
+	test("empty Anthropic variables (e.g. copied from .env.example) are treated as unset", () => {
+		const env: Record<string, string | undefined> = {
+			ANTHROPIC_API_KEY: "",
+			ANTHROPIC_AUTH_TOKEN: "  ",
+			OTHER: "",
+		};
+		expect(normalizeAnthropicEnv(env)).toBe(false);
+		expect(env).toEqual({ OTHER: "" });
+		const withKey: Record<string, string | undefined> = {
+			ANTHROPIC_API_KEY: "sk-ant-x",
+			ANTHROPIC_AUTH_TOKEN: "",
+		};
+		expect(normalizeAnthropicEnv(withKey)).toBe(true);
+		expect(withKey).toEqual({ ANTHROPIC_API_KEY: "sk-ant-x" });
+	});
+
+	test("the shipped .env.example lists the variables the default config reads, with no values", async () => {
+		const text = await Bun.file(new URL("../../../.env.example", import.meta.url)).text();
+		const names = [...text.matchAll(/^([A-Z_][A-Z0-9_]*)=/gm)].map((m) => m[1]);
+		const config = await loadConfigFile(EXAMPLE);
+		expect(names).toContain(config.github.token_env);
+		expect(names).toContain("ANTHROPIC_API_KEY");
+		expect(names).toContain("CASIAGENT_PANEL_TOKEN");
+		expect(text).not.toMatch(/^[A-Z_][A-Z0-9_]*=\S/m);
 	});
 
 	test("requireEnv explains what is missing and why", () => {

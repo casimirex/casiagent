@@ -124,3 +124,17 @@ export function requireEnv(
 	}
 	return value;
 }
+
+const ANTHROPIC_CREDENTIAL_VARS = ["ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN"] as const;
+
+/**
+ * Remove Anthropic credential variables that are set but empty (e.g. copied unchanged
+ * from .env.example). The SDK may treat an empty key as present, which would hide an
+ * `ant auth login` profile. Returns whether any non-empty credential remains.
+ */
+export function normalizeAnthropicEnv(env: Record<string, string | undefined>): boolean {
+	for (const name of ANTHROPIC_CREDENTIAL_VARS) {
+		if (env[name] !== undefined && env[name].trim() === "") delete env[name];
+	}
+	return ANTHROPIC_CREDENTIAL_VARS.some((name) => env[name] !== undefined);
+}
