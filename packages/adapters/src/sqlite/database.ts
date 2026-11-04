@@ -79,6 +79,13 @@ const MIGRATIONS: readonly string[] = [
 	);
 	CREATE INDEX observe_log_created ON observe_log (created_at);
 	`,
+	// 3: Phase 6 — poll cursors for event sources.
+	`
+	CREATE TABLE source_cursors (
+		key    TEXT PRIMARY KEY,
+		value  INTEGER NOT NULL
+	);
+	`,
 ];
 
 /** The schema version a fully migrated database reports in PRAGMA user_version. */

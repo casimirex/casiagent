@@ -10,6 +10,15 @@ export {
 export { RuleBasedAuthorization } from "./authorization/RuleBasedAuthorization";
 export { InMemoryContextSpillStore } from "./context/InMemoryContextSpillStore";
 export { keywordTerms, rankByKeywords } from "./context/keywordRecall";
+export { type CursorStore, InMemoryCursorStore } from "./github/cursorStore";
+export {
+	type FetchLike,
+	GitHubApiError,
+	GitHubClient,
+	type GitHubClientOptions,
+} from "./github/GitHubClient";
+export { GitHubPollingSource, type GitHubPollingSourceOptions } from "./github/GitHubPollingSource";
+export { GitHubPullRequests } from "./github/GitHubPullRequests";
 export {
 	ClaudeLlmAdapter,
 	type ClaudeLlmAdapterOptions,
@@ -23,6 +32,7 @@ export { BunPanelServer, type PanelServerOptions } from "./panel/BunPanelServer"
 export { migrate, openDatabase, SCHEMA_VERSION } from "./sqlite/database";
 export { SqliteAttentionStore } from "./sqlite/SqliteAttentionStore";
 export { SqliteContextSpillStore } from "./sqlite/SqliteContextSpillStore";
+export { SqliteCursorStore } from "./sqlite/SqliteCursorStore";
 export { SqliteObserveLog } from "./sqlite/SqliteObserveLog";
 export { SqliteSessionStore } from "./sqlite/SqliteSessionStore";
 export { SqliteSubscriptionStore } from "./sqlite/SqliteSubscriptionStore";
