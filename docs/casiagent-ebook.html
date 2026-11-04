@@ -1281,11 +1281,11 @@ export interface SessionStorePort {
 
 <section class="chapter" id="domains">
 	<h2 class="ch">21. Beyond software: other domains</h2>
-	<div class="ch-meta"><span class="level mid">Intermediate</span><span>22 minutes</span></div>
+	<div class="ch-meta"><span class="level mid">Intermediate</span><span>28 minutes</span></div>
 
 	<div class="box plain">
 		<span class="label">In plain words</span>
-		<p>The heart of casiagent is not about code. It listens somewhere, checks who is asking, decides whether to act, gives the job to a worker with a few safe tools, follows the conversation, and asks a person only when it must. Swap where it listens and which tools the worker holds, and the same heart can help a shop, a finance team, a clinic's front desk, a school or a support desk.</p>
+		<p>The heart of casiagent is not about code. It listens somewhere, checks who is asking, decides whether to act, gives the job to a worker with a few safe tools, follows the conversation, and asks a person only when it must. Swap where it listens and which tools the worker holds, and the same heart can help a shop, a store chain, a finance team, a law firm, a clinic's front desk, a school or a support desk.</p>
 	</div>
 
 	<figure>
@@ -1413,6 +1413,40 @@ export interface SessionStorePort {
 		</tbody>
 	</table></div>
 
+	<h3>Legal</h3>
+	<div class="box warn">
+		<span class="label">Lawyers advise, the agent prepares</span>
+		<p>The agent does not give legal advice and does not decide anything on a client's behalf. It prepares: comparisons, summaries, first drafts and checklists, which a lawyer reviews and signs. Client information is confidential and may be privileged, so confirm that your agreements with the model provider, your professional rules and your clients' instructions allow it before connecting real matters. A missed deadline can be serious: dates the agent finds are always confirmed by a person.</p>
+	</div>
+	<div class="table-wrap"><table>
+		<thead><tr><th>Use case</th><th>Listens to</th><th>What the worker does</th><th>Guard rail</th></tr></thead>
+		<tbody>
+			<tr><td>Contract review against the playbook</td><td>Contracts received for review</td><td>Compares each clause with the organisation's standard positions and lists the differences, with suggested edits and the reason for each</td><td>Suggestions only; a lawyer decides and nothing is signed or sent</td></tr>
+			<tr><td>NDA triage</td><td>Incoming non-disclosure agreements</td><td>Separates standard NDAs from unusual ones and prepares a marked-up copy of the standard ones</td><td>A lawyer approves every NDA, standard or not</td></tr>
+			<tr><td>Matter intake</td><td>New-matter requests</td><td>Collects the parties, related companies and key facts, and prepares the conflict-check request</td><td>The conflicts team runs and clears the check</td></tr>
+			<tr><td>Deadline tracking</td><td>Court notices and filings</td><td>Finds dates and deadlines in new documents and drafts calendar entries with the source quoted</td><td>A person confirms every date before it counts</td></tr>
+			<tr><td>Document review first pass</td><td>Document sets for a matter</td><td>Sorts documents by relevance and flags those that may be privileged, with a short reason</td><td>Lawyers make every relevance and privilege call</td></tr>
+			<tr><td>Regulatory change summaries</td><td>New regulations and guidance in chosen areas</td><td>Summarises what changed and which internal policies may be affected</td><td>Summaries for review, not advice</td></tr>
+		</tbody>
+	</table></div>
+
+	<h3>Retail (stores and click-and-collect)</h3>
+	<div class="box warn">
+		<span class="label">People decisions stay with managers</span>
+		<p>The agent helps run the store, not judge the staff. Scheduling, performance and anything disciplinary stay with managers, and shift changes must follow local working-time rules. It does not monitor or accuse individual employees or customers: patterns such as unexplained stock loss are reported as facts for a manager to look into.</p>
+	</div>
+	<div class="table-wrap"><table>
+		<thead><tr><th>Use case</th><th>Listens to</th><th>What the worker does</th><th>Guard rail</th></tr></thead>
+		<tbody>
+			<tr><td>Shift swap requests</td><td>Staff requests in the scheduling tool</td><td>Checks who is qualified and available and that hours stay within the rules, then drafts the swap</td><td>The manager approves every change</td></tr>
+			<tr><td>Price and label mismatches</td><td>Store reports of shelf prices that differ from the till</td><td>Checks the price system and recent changes, drafts the correction and a reprint list</td><td>Price changes are approved centrally</td></tr>
+			<tr><td>Stock transfers between stores</td><td>Low-stock alerts per store</td><td>Finds stores with spare stock of the same item and drafts a transfer request</td><td>Transfers are confirmed by both stores</td></tr>
+			<tr><td>Store maintenance</td><td>Repair tickets (lights, freezers, doors)</td><td>Classifies the urgency, gathers details, drafts the work order for the right contractor</td><td>Safety issues and failing freezers go to the store manager at once</td></tr>
+			<tr><td>Supplier delivery discrepancies</td><td>Goods-received reports that differ from the order</td><td>Compares the delivery note, order and invoice, and drafts the claim to the supplier</td><td>Claims are sent by the buying team</td></tr>
+			<tr><td>Click-and-collect problems</td><td>Customer messages about missing or late collection orders</td><td>Checks the order and store status, drafts an update and, if needed, a goodwill offer</td><td>Offers above a set value need staff approval (enforced in the tool)</td></tr>
+		</tbody>
+	</table></div>
+
 	<h3>Other domains</h3>
 	<div class="table-wrap"><table>
 		<thead><tr><th>Domain</th><th>Use case</th><th>What the worker does</th><th>Guard rail</th></tr></thead>
@@ -1420,7 +1454,7 @@ export interface SessionStorePort {
 			<tr><td>Customer support</td><td>Ticket triage and answers</td><td>Classifies the ticket, answers from the help-centre articles, escalates what it cannot answer</td><td>Replies to explicit questions only; unsure answers go to a person</td></tr>
 			<tr><td>IT operations</td><td>Access requests and alerts</td><td>Checks a request against the access policy and prepares the change; reads an alert's runbook and gathers the diagnostics</td><td>Access changes are approved by IT; no production changes</td></tr>
 			<tr><td>HR and recruiting</td><td>Onboarding and policy questions</td><td>Prepares onboarding checklists and accounts to request; answers policy questions from the handbook</td><td>No decisions about people: hiring and screening stay human</td></tr>
-			<tr><td>Legal and compliance</td><td>Contract intake</td><td>Compares a received contract with the company's standard clauses and lists the differences with suggested edits</td><td>Suggestions only; nothing is signed or sent</td></tr>
+			<tr><td>Media and publishing</td><td>Fact-check requests</td><td>Checks names, dates and figures in a draft against the cited sources and lists anything it could not confirm</td><td>Editors decide what is published</td></tr>
 			<tr><td>Marketing and content</td><td>Content requests</td><td>Drafts posts, product copy or newsletters and checks them against the brand guide</td><td>Drafts only; publishing stays manual</td></tr>
 			<tr><td>Logistics</td><td>Shipment exceptions</td><td>Gathers the carrier's status, finds alternatives, drafts the customer update and a rerouting proposal</td><td>Rerouting is approved by a person</td></tr>
 		</tbody>
